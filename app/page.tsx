@@ -47,8 +47,11 @@ export default function Home() {
             <img 
               src={stats.avatarUrl} 
               alt="avatar" 
-              className="w-24 h-24 border-4 border-white" 
-              style={{imageRendering: 'pixelated'}}
+              className="border-4 border-white" 
+              style={{
+                width: '100px',
+                height: '100px',
+                imageRendering: 'pixelated'}}
             />
             
             {/* Stats Block */}
