@@ -4,74 +4,117 @@ import { getPlayerStats } from '../lib/github';
 import "nes.css/css/nes.min.css"; 
 
 export default function Home() {
-  const [username, setUsername] = useState('');
-  const [stats, setStats] = useState<any>(null);
+  const [p1, setP1] = useState('');
+  const [p2, setP2] = useState('');
+  const [stats1, setStats1] = useState<any>(null);
+  const [stats2, setStats2] = useState<any>(null);
   const [loading, setLoading] = useState(false);
+  const [winner, setWinner] = useState<string | null>(null);
 
-  const handleFight = async () => {
-    if (!username) return;
+  const handleBattle = async () => {
+    if (!p1 || !p2) return;
     setLoading(true);
-    // Fetch data from our API helper
-    const data = await getPlayerStats(username);
-    setStats(data);
+    setWinner(null);
+
+    // Fetch both players at the same time
+    const [data1, data2] = await Promise.all([
+      getPlayerStats(p1),
+      getPlayerStats(p2)
+    ]);
+
+    setStats1(data1);
+    setStats2(data2);
+
+    // Decide the Winner (more followers = win)
+    if (data1 && data2) {
+      if (data1.followers.totalCount > data2.followers.totalCount) {
+        setWinner(data1.login);
+      } else if (data2.followers.totalCount > data1.followers.totalCount) {
+        setWinner(data2.login);
+      } else {
+        setWinner("DRAW");
+      }
+    }
+    
     setLoading(false);
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 text-white p-10 font-mono">
-      {/* The Container */}
-      <div className="nes-container is-dark with-title" style={{ width: '600px', backgroundColor: '#212529'}}>
-        <p className="title">Git Battle Arena</p>
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-900 text-white p-4 font-mono">
+      
+      {/* HEADER */}
+      <div className="mb-10 text-center">
+        <h1 className="text-4xl text-yellow-400 mb-4 animate-bounce">⚔️ GIT BATTLE ⚔️</h1>
+        {winner && (
+          <div className="nes-container is-rounded is-dark">
+            <p className="text-green-400 text-xl">🏆 WINNER: {winner} 🏆</p>
+          </div>
+        )}
+      </div>
+
+      {/* BATTLE ARENA */}
+      <div className="flex flex-col md:flex-row gap-8 items-start w-full max-w-4xl justify-center">
         
-        {/* The Input Field */}
-        <div className="nes-field is-inline flex gap-4">
+        {/* PLAYER 1 COLUMN */}
+        <div className="nes-container is-dark with-title flex-1 w-full">
+          <p className="title text-blue-400">Player 1</p>
           <input 
             type="text" 
-            className="nes-input is-dark" 
-            placeholder="GitHub Username..."
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
+            className="nes-input is-dark mb-4" 
+            placeholder="Username..."
+            value={p1}
+            onChange={(e) => setP1(e.target.value)}
           />
+          {stats1 && (
+            <div className="text-center">
+              <img 
+                src={stats1.avatarUrl} 
+                alt="P1" 
+                className={`border-4 mx-auto mb-4 ${winner === stats1.login ? 'border-yellow-400' : 'border-gray-500'}`}
+                style={{ width: '120px', height: '120px', imageRendering: 'pixelated' }}
+              />
+              <h3 className="text-xl mb-2">{stats1.login}</h3>
+              <p className="text-red-500">HP: {stats1.followers.totalCount}</p>
+              <progress className="nes-progress is-error" value={stats1.followers.totalCount} max="1000"></progress>
+            </div>
+          )}
+        </div>
+
+        {/* VS BUTTON */}
+        <div className="self-center">
           <button 
-            className={`nes-btn ${loading ? 'is-disabled' : 'is-primary'}`} 
-            onClick={handleFight}
+            className={`nes-btn ${loading ? 'is-disabled' : 'is-error'}`} 
+            onClick={handleBattle}
           >
-            {loading ? '...' : 'SCAN'}
+            {loading ? 'FIGHTING...' : 'FIGHT!'}
           </button>
         </div>
 
-        {/* The Player Card (Only shows after data loads) */}
-        {stats && (
-          <div className="mt-10 flex gap-6 items-center border-t border-gray-700 pt-6 animate-pulse">
-            {/* Avatar */}
-            <img 
-              src={stats.avatarUrl} 
-              alt="avatar" 
-              className="border-4 border-white" 
-              style={{
-                width: '100px',
-                height: '100px',
-                imageRendering: 'pixelated'}}
-            />
-            
-            {/* Stats Block */}
-            <div className="flex-1 w-full">
-              <h3 className="text-xl mb-4 text-green-400">{stats.login}</h3>
-              
-              {/* HP Bar */}
-              <div className="mb-4">
-                <span className="text-red-500 mb-1 block">HP (Followers): {stats.followers.totalCount}</span>
-                <progress className="nes-progress is-error h-6 w-full" value={stats.followers.totalCount} max="1000"></progress>
-              </div>
-
-              {/* Speed Bar */}
-              <div>
-                <span className="text-yellow-400 mb-1 block">SPD (Commits): {stats.contributionsCollection.contributionCalendar.totalContributions}</span>
-                <progress className="nes-progress is-warning h-6 w-full" value={stats.contributionsCollection.contributionCalendar.totalContributions} max="2000"></progress>
-              </div>
+        {/* PLAYER 2 COLUMN */}
+        <div className="nes-container is-dark with-title flex-1 w-full">
+          <p className="title text-red-400">Player 2</p>
+          <input 
+            type="text" 
+            className="nes-input is-dark mb-4" 
+            placeholder="Username..."
+            value={p2}
+            onChange={(e) => setP2(e.target.value)}
+          />
+          {stats2 && (
+            <div className="text-center">
+              <img 
+                src={stats2.avatarUrl} 
+                alt="P2" 
+                className={`border-4 mx-auto mb-4 ${winner === stats2.login ? 'border-yellow-400' : 'border-gray-500'}`}
+                style={{ width: '120px', height: '120px', imageRendering: 'pixelated' }}
+              />
+              <h3 className="text-xl mb-2">{stats2.login}</h3>
+              <p className="text-red-500">HP: {stats2.followers.totalCount}</p>
+              <progress className="nes-progress is-error" value={stats2.followers.totalCount} max="1000"></progress>
             </div>
-          </div>
-        )}
+          )}
+        </div>
+
       </div>
     </div>
   );
