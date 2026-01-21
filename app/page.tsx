@@ -28,105 +28,106 @@ export default function Home() {
 
     if (data1 && data2) {
       setFighting(true);
-      
       setTimeout(() => {
         setFighting(false);
-        if (data1.followers.totalCount > data2.followers.totalCount) {
-          setWinner(data1.login);
-        } else if (data2.followers.totalCount > data1.followers.totalCount) {
-          setWinner(data2.login);
-        } else {
-          setWinner("DRAW");
-        }
+        if (data1.followers.totalCount > data2.followers.totalCount) setWinner(data1.login);
+        else if (data2.followers.totalCount > data1.followers.totalCount) setWinner(data2.login);
+        else setWinner("DRAW");
       }, 800);
     }
   };
 
+  const resetGame = () => {
+    setWinner(null);
+    setStats1(null);
+    setStats2(null);
+    setP1('');
+    setP2('');
+  };
+
   return (
-    <div className="min-h-screen bg-gray-900 text-white font-mono flex flex-col items-center p-4 overflow-hidden">
+    <div style={{ minHeight: '100vh', backgroundColor: '#212529', color: 'white', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '20px', fontFamily: 'monospace' }}>
       
-      <div className="mt-8 mb-8 text-center">
-        <h1 className="text-4xl text-yellow-400 mt-4 mb-2 tracking-widest">GIT BATTLE</h1>
+      {/* HEADER */}
+      <div style={{ marginBottom: '40px', textAlign: 'center' }}>
+        <h1 style={{ color: '#f7d51d', fontSize: '3rem', marginBottom: '10px' }}>GIT BATTLE</h1>
+        <p style={{ color: '#aaa' }}>8-BIT WARFARE</p>
       </div>
 
-      <div className="flex flex-col md:flex-row gap-4 items-center w-full max-w-5xl relative">
+      {/* BATTLE ARENA */}
+      <div style={{ display: 'flex', gap: '20px', alignItems: 'center', justifyContent: 'center', width: '100%', flexWrap: 'wrap' }}>
         
-        {/* === PLAYER 1 === */}
-        <div className={`transition-all duration-500 transform ${fighting ? 'translate-x-[200px] z-20 scale-125' : ''} nes-container is-dark with-title flex-1 w-full`}>
-          <p className="title text-blue-400">Player 1</p>
-          <input 
-            type="text" 
-            className="nes-input is-dark" 
-            placeholder="e.g. torvalds"
-            value={p1}
-            onChange={(e) => setP1(e.target.value)}
-          />
-          {stats1 && (
-            <div className="text-center mt-6">
+        {/* PLAYER 1 CARD */}
+        <div className={`nes-container is-dark with-title ${fighting ? 'fight-left' : ''}`} style={{ width: '350px', height: '450px', display: 'flex', flexDirection: 'column', transition: 'transform 0.5s' }}>
+          <p className="title" style={{ color: '#3b82f6' }}>Player 1</p>
+          {!stats1 ? (
+             <div style={{ marginTop: 'auto', marginBottom: 'auto' }}>
+               <input type="text" className="nes-input is-dark" placeholder="Github Username" value={p1} onChange={(e) => setP1(e.target.value)} />
+             </div>
+          ) : (
+            <div style={{ textAlign: 'center', marginTop: '20px' }}>
               <img 
                 src={stats1.avatarUrl} 
-                alt="Player 1 Avatar"
-                className="mx-auto border-4 border-white mb-4"
-                style={{ width: '100px', height: '100px', imageRendering: 'pixelated' }}
+                alt="P1" 
+                style={{ width: '150px', height: '150px', border: '4px solid white', margin: '0 auto', display: 'block' }} 
               />
-              <h2 className="text-xl text-blue-300">{stats1.login}</h2>
-              <p className="text-xs text-red-400 mt-2">HP: {stats1.followers.totalCount}</p>
+              <h2 style={{ color: '#60a5fa', marginTop: '15px', fontSize: '1.5rem' }}>{stats1.login}</h2>
+              <div style={{ marginTop: '20px', textAlign: 'left', background: '#333', padding: '10px' }}>
+                <p style={{ color: '#ef4444', fontSize: '0.8rem' }}>HP: {stats1.followers.totalCount}</p>
+                <progress className="nes-progress is-error" value={stats1.followers.totalCount} max="5000" style={{ height: '20px' }}></progress>
+              </div>
             </div>
           )}
         </div>
 
-        {/* === VS BUTTON / EXPLOSION === */}
-        <div className="z-10 flex flex-col items-center justify-center shrink-0 w-32">
-          {fighting ? (
-            <div className="text-6xl animate-ping">💥</div>
-          ) : (
-            <button 
-              onClick={handleBattle}
-              className={`nes-btn ${loading ? 'is-disabled' : 'is-error'} rounded-full h-20 w-20 flex items-center justify-center`}
-            >
-              VS
-            </button>
-          )}
+        {/* VS BUTTON */}
+        <div style={{ zIndex: 10 }}>
+           {fighting ? <span style={{ fontSize: '4rem' }}>💥</span> : 
+             <button onClick={handleBattle} className={`nes-btn ${loading ? 'is-disabled' : 'is-error'}`}>VS</button>
+           }
         </div>
 
-        {/* === PLAYER 2 === */}
-        <div className={`transition-all duration-500 transform ${fighting ? '-translate-x-[200px] z-20 scale-125' : ''} nes-container is-dark with-title flex-1 w-full`}>
-          <p className="title text-red-400">Player 2</p>
-          <input 
-            type="text" 
-            className="nes-input is-dark" 
-            placeholder="e.g. shadcn"
-            value={p2}
-            onChange={(e) => setP2(e.target.value)}
-          />
-          {stats2 && (
-            <div className="text-center mt-6">
-              {/* FIXED: Added alt tag below */}
+        {/* PLAYER 2 CARD */}
+        <div className={`nes-container is-dark with-title ${fighting ? 'fight-right' : ''}`} style={{ width: '350px', height: '450px', display: 'flex', flexDirection: 'column', transition: 'transform 0.5s' }}>
+          <p className="title" style={{ color: '#ef4444' }}>Player 2</p>
+          {!stats2 ? (
+             <div style={{ marginTop: 'auto', marginBottom: 'auto' }}>
+               <input type="text" className="nes-input is-dark" placeholder="Github Username" value={p2} onChange={(e) => setP2(e.target.value)} />
+             </div>
+          ) : (
+            <div style={{ textAlign: 'center', marginTop: '20px' }}>
               <img 
                 src={stats2.avatarUrl} 
-                alt="Player 2 Avatar"
-                className="mx-auto border-4 border-white mb-4"
-                style={{ width: '100px', height: '100px', imageRendering: 'pixelated' }}
+                alt="P2" 
+                style={{ width: '150px', height: '150px', border: '4px solid white', margin: '0 auto', display: 'block' }} 
               />
-              <h2 className="text-xl text-red-300">{stats2.login}</h2>
-              <p className="text-xs text-red-400 mt-2">HP: {stats2.followers.totalCount}</p>
+              <h2 style={{ color: '#f87171', marginTop: '15px', fontSize: '1.5rem' }}>{stats2.login}</h2>
+              <div style={{ marginTop: '20px', textAlign: 'left', background: '#333', padding: '10px' }}>
+                <p style={{ color: '#ef4444', fontSize: '0.8rem' }}>HP: {stats2.followers.totalCount}</p>
+                <progress className="nes-progress is-error" value={stats2.followers.totalCount} max="5000" style={{ height: '20px' }}></progress>
+              </div>
             </div>
           )}
         </div>
 
       </div>
 
-      {/* === WINNER BANNER === */}
+      {/* WINNER OVERLAY */}
       {winner && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-80 z-50">
-          <div className="nes-container is-rounded is-dark bg-yellow-400 text-black p-10 text-center animate-bounce">
-            <h2 className="text-4xl mb-4"> KO! </h2>
-            <p className="text-2xl">WINNER: {winner}</p>
-            <button className="nes-btn is-primary mt-6" onClick={() => setWinner(null)}>AGAIN</button>
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', backgroundColor: 'rgba(0,0,0,0.9)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999 }}>
+          <div className="nes-container is-rounded is-dark" style={{ border: '4px solid #f7d51d', padding: '40px', textAlign: 'center', backgroundColor: '#212529' }}>
+            <h2 style={{ color: '#f7d51d', fontSize: '3rem', marginBottom: '20px' }}>🏆 WINNER 🏆</h2>
+            <p style={{ color: 'white', fontSize: '2rem', marginBottom: '30px' }}>{winner}</p>
+            <button className="nes-btn is-primary" onClick={resetGame}>NEW FIGHT</button>
           </div>
         </div>
       )}
 
+      {/* Animation Styles */}
+      <style jsx global>{`
+        .fight-left { transform: translateX(50px) rotate(10deg); }
+        .fight-right { transform: translateX(-50px) rotate(-10deg); }
+      `}</style>
     </div>
   );
 }
