@@ -7,11 +7,11 @@ import UserCard from "./components/UserCard";
 import BattleView from "./components/BattleView";
 
 export default function Home() {
-  // State for Player 1 (You)
+  // State for Player 1
   const [playerUsername, setPlayerUsername] = useState("");
   const [player, setPlayer] = useState<Character | null>(null);
   
-  // State for Player 2 (The Enemy)
+  // State for Player 2 
   const [opponentUsername, setOpponentUsername] = useState("");
   const [opponent, setOpponent] = useState<Character | null>(null);
 
@@ -19,7 +19,7 @@ export default function Home() {
   const [error, setError] = useState("");
   const [battleStarted, setBattleStarted] = useState(false);
 
-  // Reusable function to fetch data
+  // fetch Data
   const handleSummon = async (username: string, isPlayer: boolean) => {
     if (!username) return;
     setLoading(true);
@@ -47,7 +47,7 @@ return (
         GIT BATTLE
       </h1>
 
-      {/* 1. IF BATTLE STARTED -> SHOW ARENA */}
+      {/* BATTLE STARTED -> SHOW ARENA */}
       {battleStarted && player && opponent ? (
         <BattleView 
           player={player} 
@@ -55,7 +55,7 @@ return (
           onReset={() => setBattleStarted(false)} 
         />
       ) : (
-        // 2. IF NO BATTLE -> SHOW SUMMONING SCREEN
+        // NO BATTLE -> SHOW SUMMONING SCREEN
         <>
           {/* Error Banner */}
           {error && (

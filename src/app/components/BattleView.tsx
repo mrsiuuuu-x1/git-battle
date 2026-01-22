@@ -12,12 +12,12 @@ export default function BattleView({ player, opponent, onReset }: BattleViewProp
   const [battleState, setBattleState] = useState<BattleState | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // 1. Initialize Battle on Mount
+  // Initialize Battle on Mount
   useEffect(() => {
     setBattleState(initializeBattle(player, opponent));
   }, [player, opponent]);
 
-  // 2. Auto-Play Turns every 1 second
+  // Auto-Play Turns every second
   useEffect(() => {
     if (!battleState || battleState.winner) return;
 
@@ -26,12 +26,12 @@ export default function BattleView({ player, opponent, onReset }: BattleViewProp
         if (!prev || prev.winner) return prev;
         return simulateTurn(prev, player, opponent);
       });
-    }, 1000); // Speed of turns (1000ms = 1 second)
+    }, 1000);
 
     return () => clearInterval(timer);
   }, [battleState, player, opponent]);
 
-  // 3. Auto-scroll logs to bottom
+  // Auto-scroll logs to bottom
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -60,7 +60,7 @@ export default function BattleView({ player, opponent, onReset }: BattleViewProp
         <div className="text-center w-1/3">
           <img 
             src={player.avatar} 
-            alt={player.username} // <--- FIXED: Added alt text
+            alt={player.username}
             className="w-20 h-20 rounded-full border-4 border-indigo-500 mx-auto mb-2 shadow-[0_0_20px_rgba(99,102,241,0.5)]" 
           />
           <h3 className="text-white font-bold">{player.username}</h3>
@@ -82,7 +82,7 @@ export default function BattleView({ player, opponent, onReset }: BattleViewProp
         <div className="text-center w-1/3">
           <img 
             src={opponent.avatar} 
-            alt={opponent.username} // <--- FIXED: Added alt text
+            alt={opponent.username}
             className="w-20 h-20 rounded-full border-4 border-red-500 mx-auto mb-2 shadow-[0_0_20px_rgba(239,68,68,0.5)]" 
           />
           <h3 className="text-white font-bold">{opponent.username}</h3>
@@ -115,7 +115,7 @@ export default function BattleView({ player, opponent, onReset }: BattleViewProp
         ))}
       </div>
 
-      {/* RESET BUTTON (Only shows when game ends) */}
+      {/* RESET BUTTON (At the end of game) */}
       {battleState.winner && (
         <button 
           onClick={onReset}
