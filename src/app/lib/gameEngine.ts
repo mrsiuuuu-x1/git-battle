@@ -11,10 +11,14 @@ export interface BattleState {
     //Cooldown timers
     playerHealCd: number;
     opponentHealCd: number;
+    // track num of heals used
+    playerHealsUsed: number;
+    opponentHealsUsed: number;
 }
 
 // Cooldown amount
 const HEAL_COOLDOWN_TURNS = 3;
+const MAX_HEALS = 3;
 
 // The Nerfing Algorithm
 function normalizeStat(value: number): number {
@@ -63,6 +67,8 @@ export function initializeBattle(player: Character, opponent: Character): Battle
         isPlayerTurn: playerGoesFirst,
         playerHealCd: 0,
         opponentHealCd: 0,
+        playerHealsUsed: 0,
+        opponentHealsUsed: 0,
     };
 }
 
@@ -97,8 +103,12 @@ export function performPlayerTurn(
         newState.logs.push(`Turn ${newState.turn}: You used Commit Storm! -${pDmg} HP`);
     } else if (action === "heal") {
         //Heal LOGIC
+        // check limit
+        if (newState.playerHealsUsed >= MAX_HEALS) {
+            newState.logs.push(`No potions left! You cannot heal anymore.`);
+            return newState;
+        }
         if (newState.playerHealCd > 0) {
-            newState.logs.push(`Cannot heal yet! Cooldown remaining`);
             return newState;
         }
 
@@ -106,7 +116,8 @@ export function performPlayerTurn(
         newState.playerHp = Math.min(newState.playerHp + healAmount, newState.playerMaxHp);
         // set cooldown
         newState.playerHealCd = HEAL_COOLDOWN_TURNS;
-        newState.logs.push(`Turn ${newState.turn}: You used Merge Shield! +${healAmount} HP. (Cooldown active)`);
+        newState.playerHealsUsed += 1; //increment usage
+        newState.logs.push(`Turn ${newState.turn}: You used Merge Shield! +${healAmount} HP. (${MAX_HEALS - newState.playerHealsUsed} left)`);
     }
 
     // check if opponent died (VICTORY)
@@ -129,7 +140,6 @@ export function performOpponentTurn(
     if (state.isPlayerTurn || state.winner) return state;
 
     const newState = { ...state, logs: [...state.logs] };
-
     newState.playerHealCd = Math.max(0, newState.playerHealCd - 1);
     newState.opponentHealCd = Math.max(0, newState.opponentHealCd - 1);
 
@@ -139,11 +149,14 @@ export function performOpponentTurn(
     // AI LOGIC (CHECK IF HP BELOW 40%, heal)
     const isLowHp = newState.opponentHp < (newState.opponentMaxHp * 0.4);
     const isHealReady = newState.opponentHealCd === 0;
+    // check limit
+    const hasHealsLeft = newState.opponentHealsUsed < MAX_HEALS;
     
-    if (isLowHp && isHealReady) {
+    if (isLowHp && isHealReady && hasHealsLeft) {
         const healAmount = Math.floor(newState.opponentMaxHp * 0.30);
         newState.opponentHp = Math.min(newState.opponentHp + healAmount , newState.opponentMaxHp);
         newState.opponentHealCd = HEAL_COOLDOWN_TURNS;
+        newState.opponentHealsUsed += 1; // increment usage
         newState.logs.push(`Turn ${newState.turn}: ${opponent.username} used Merge Shield! +${healAmount} HP.`);
     } else {
             // Opponent Attacks (same formula)

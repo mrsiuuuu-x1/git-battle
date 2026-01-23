@@ -41,12 +41,15 @@ export default function BattleView({ player, opponent, onReset }: BattleViewProp
     setBattleState((prev) => prev ? performPlayerTurn(prev, player, opponent, action) : null);
   };
 
-  // Helper to determine if heal button is disabled
-  const isHealDisabled = !battleState.isPlayerTurn || battleState.playerHealCd > 0;
+  // COOLDOWN AND HEALS LEFT LOGIC
+  const healsLeft = 3 - battleState.playerHealsUsed;
+  const isHealDisabled = !battleState.isPlayerTurn || battleState.playerHealCd > 0 || healsLeft <= 0;
+
   // Helper button text
-  const healButtonText = battleState.playerHealCd > 0
-    ? `🛡️ Wait (${battleState.playerHealCd})` 
-    : `🛡️ MERGE SHIELD`;
+  let healButtonText = "🛡️ MERGE SHIELD";
+  if (healsLeft <= 0) healButtonText = "🛡️ EMPTY";
+  else if (battleState.playerHealCd > 0) healButtonText = `🛡️ Wait (${battleState.playerHealCd})`;
+  else healButtonText = `🛡️ MERGE SHIELD (${healsLeft})`;
 
   return (
     <div className="w-full max-w-4xl bg-zinc-900 border border-zinc-700 rounded-xl overflow-hidden flex flex-col shadow-2xl">
@@ -118,6 +121,7 @@ export default function BattleView({ player, opponent, onReset }: BattleViewProp
             ${log.includes("DEFEAT") ? "text-red-600 font-bold text-lg text-center my-4" : ""}
             ${log.includes("CRITICAL HIT") ? "text-orange-500 font-bold" : ""}
             ${log.includes("You are faster") ? "text-blue-400 italic" : ""}
+            ${log.includes("No potions left") ? "text-red-500 font-bold" : ""}
           `}>
             {log}
           </div>
@@ -144,10 +148,14 @@ export default function BattleView({ player, opponent, onReset }: BattleViewProp
             </button>
             <button
               onClick={() => handleAction("heal")}
-              disabled={!battleState.isPlayerTurn}
-              className="flex-1 bg-green-600 hover:bg-green-500 disabled:opacity-30 disabled:cursor-not-allowed text-white font-bold py-4 rounded-lg transition-all border-b-4 border-green-800 active:border-b-0 active:translate-y-1"
+              disabled={isHealDisabled}
+              className={`flex-1 text-white font-bold py-4 rounded-lg transition-all border-b-4 active:border-b-0 active:translate-y-1
+                ${isHealDisabled 
+                  ? "bg-zinc-600 border-zinc-800 opacity-50 cursor-not-allowed"
+                  : "bg-green-600 hover:bg-green-500 border-green-800"
+                }`}
             >
-              🛡️ MERGE SHIELD
+              {healButtonText}
             </button>
           </div>
         )}
