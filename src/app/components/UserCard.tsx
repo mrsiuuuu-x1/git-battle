@@ -5,12 +5,17 @@ interface UserCardProps {
 }
 
 export default function UserCard({ character }: UserCardProps) {
-  // Determine buffs/bonus text based on class
+  // Determine bonus text based on class
   let bonusText = "";
-  if (character.class === "Frontend Warrior") bonusText = "⚡ +25% SPEED";
-  else if (character.class === "Backend Mage") bonusText = "⚔️ +25% ATTACK";
-  else if (character.class === "DevOps Paladin") bonusText = "🛡️ +25% DEFENSE";
-  else { bonusText = "⚖️ BALANCED STATS";}
+  if (character.class === "Frontend Warrior") {
+    bonusText = "⚡ +25% SPEED";
+  } else if (character.class === "Backend Mage") {
+    bonusText = "⚔️ +25% ATTACK";
+  } else if (character.class === "DevOps Paladin") {
+    bonusText = "🛡️ +25% DEFENSE";
+  } else {
+    bonusText = "⚖️ BALANCED STATS";
+  }
 
   return (
     <div className="relative w-80 bg-zinc-900 border border-zinc-700 rounded-xl overflow-hidden shadow-2xl hover:scale-105 transition-transform duration-300">
@@ -18,8 +23,8 @@ export default function UserCard({ character }: UserCardProps) {
       {/* Header: Avatar & Class */}
       <div className="bg-gradient-to-b from-zinc-800 to-zinc-900 p-6 flex flex-col items-center border-b border-zinc-700">
         <img 
-          src={character.avatar}
-          alt={character.username}
+          src={character.avatar} 
+          alt={character.username} 
           className="w-24 h-24 rounded-full border-4 border-indigo-500 shadow-lg mb-4"
         />
         <h2 className="text-2xl font-bold text-white">{character.username}</h2>
@@ -30,11 +35,11 @@ export default function UserCard({ character }: UserCardProps) {
         </span>
 
         {/* Bonus Badge */}
-        {bonusText && (
-          <span className="text-xs font-bold text-yellow-400 mt-2 animate-pulse">
-            {bonusText}
-          </span>
-        )}
+        <span className={`text-xs font-bold mt-2 animate-pulse ${
+          bonusText.includes("BALANCED") ? "text-gray-400" : "text-yellow-400"
+        }`}>
+          {bonusText}
+        </span>
       </div>
 
       {/* Stats Grid */}
@@ -48,8 +53,8 @@ export default function UserCard({ character }: UserCardProps) {
           </div>
           <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
             <div 
-              className="h-full bg-red-500"
-              style={{ width: `${Math.min(character.stats.hp / 10, 100)}%` }}
+              className="h-full bg-red-500" 
+              style={{ width: `${Math.min(character.stats.hp / 10, 100)}%` }} 
             />
           </div>
         </div>
@@ -62,8 +67,8 @@ export default function UserCard({ character }: UserCardProps) {
           </div>
           <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
             <div 
-              className="h-full bg-yellow-500"
-              style={{ width: `${Math.min(character.stats.attack, 100)}%` }}
+              className="h-full bg-yellow-500" 
+              style={{ width: `${Math.min(character.stats.attack, 100)}%` }} 
             />
           </div>
         </div>
@@ -76,8 +81,8 @@ export default function UserCard({ character }: UserCardProps) {
           </div>
           <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
             <div 
-              className="h-full bg-blue-500"
-              style={{ width: `${Math.min(character.stats.defense / 5, 100)}%` }}
+              className="h-full bg-blue-500" 
+              style={{ width: `${Math.min(character.stats.defense / 5, 100)}%` }} 
             />
           </div>
         </div>
@@ -90,8 +95,8 @@ export default function UserCard({ character }: UserCardProps) {
           </div>
           <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
             <div 
-              className="h-full bg-green-500"
-              style={{ width: `${Math.min(character.stats.speed, 100)}%` }}
+              className="h-full bg-green-500" 
+              style={{ width: `${Math.min(character.stats.speed, 100)}%` }} 
             />
           </div>
         </div>

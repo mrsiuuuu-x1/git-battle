@@ -12,15 +12,12 @@ export default function BattleView({ player, opponent, onReset }: BattleViewProp
   const [battleState, setBattleState] = useState<BattleState | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // Initialize Battle
   useEffect(() => {
     setBattleState(initializeBattle(player, opponent));
   }, [player, opponent]);
 
-  // Handle Enemy Turn (Auto)
   useEffect(() => {
     if (battleState && !battleState.winner && !battleState.isPlayerTurn) {
-      // Small delay so it feels like the enemy is thinking
       const timer = setTimeout(() => {
         setBattleState((prev) => prev ? performOpponentTurn(prev, player, opponent) : null);
       }, 1000);
@@ -28,7 +25,6 @@ export default function BattleView({ player, opponent, onReset }: BattleViewProp
     }
   }, [battleState, player, opponent]);
 
-  // Auto-scroll logs
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -41,11 +37,10 @@ export default function BattleView({ player, opponent, onReset }: BattleViewProp
     setBattleState((prev) => prev ? performPlayerTurn(prev, player, opponent, action) : null);
   };
 
-  // COOLDOWN AND HEALS LEFT LOGIC
+  // Logic: Disabled if cooldown active OR if 3 heals already used
   const healsLeft = 3 - battleState.playerHealsUsed;
   const isHealDisabled = !battleState.isPlayerTurn || battleState.playerHealCd > 0 || healsLeft <= 0;
-
-  // Helper button text
+  
   let healButtonText = "🛡️ MERGE SHIELD";
   if (healsLeft <= 0) healButtonText = "🛡️ EMPTY";
   else if (battleState.playerHealCd > 0) healButtonText = `🛡️ Wait (${battleState.playerHealCd})`;
@@ -65,14 +60,15 @@ export default function BattleView({ player, opponent, onReset }: BattleViewProp
         
         {/* PLAYER */}
         <div className={`text-center w-1/3 transition-opacity ${!battleState.isPlayerTurn ? "opacity-50" : "opacity-100"}`}>
-          <img 
-            src={player.avatar} 
-            alt={player.username}
-            className="w-24 h-24 rounded-full border-4 border-indigo-500 mx-auto mb-4 shadow-[0_0_20px_rgba(99,102,241,0.5)]" 
-          />
-          <h3 className="text-white font-bold text-lg">{player.username}</h3>
+          <img src={player.avatar} alt={player.username} className="w-24 h-24 rounded-full border-4 border-indigo-500 mx-auto mb-4 shadow-[0_0_20px_rgba(99,102,241,0.5)]" />
+          <h3 className="text-white font-bold text-lg mb-1">{player.username}</h3>
+          {player.class !== "Novice Adventurer" && (
+             <span className="text-[10px] font-bold text-yellow-400 bg-yellow-400/10 px-2 py-1 rounded-full">
+               {player.class.includes("Warrior") ? "+SPD" : player.class.includes("Mage") ? "+ATK" : "+DEF"}
+             </span>
+          )}
           
-          <div className="w-full bg-gray-800 h-4 rounded-full mt-2 overflow-hidden border border-gray-600 relative">
+          <div className="w-full bg-gray-800 h-4 rounded-full mt-4 overflow-hidden border border-gray-600 relative">
             <div 
               className="bg-green-500 h-full transition-all duration-500"
               style={{ width: `${(battleState.playerHp / battleState.playerMaxHp) * 100}%` }}
@@ -88,14 +84,15 @@ export default function BattleView({ player, opponent, onReset }: BattleViewProp
 
         {/* OPPONENT */}
         <div className={`text-center w-1/3 transition-opacity ${battleState.isPlayerTurn ? "opacity-50" : "opacity-100"}`}>
-          <img 
-            src={opponent.avatar} 
-            alt={opponent.username}
-            className="w-24 h-24 rounded-full border-4 border-red-500 mx-auto mb-4 shadow-[0_0_20px_rgba(239,68,68,0.5)]" 
-          />
-          <h3 className="text-white font-bold text-lg">{opponent.username}</h3>
+          <img src={opponent.avatar} alt={opponent.username} className="w-24 h-24 rounded-full border-4 border-red-500 mx-auto mb-4 shadow-[0_0_20px_rgba(239,68,68,0.5)]" />
+          <h3 className="text-white font-bold text-lg mb-1">{opponent.username}</h3>
+           {opponent.class !== "Novice Adventurer" && (
+             <span className="text-[10px] font-bold text-yellow-400 bg-yellow-400/10 px-2 py-1 rounded-full">
+               {opponent.class.includes("Warrior") ? "+SPD" : opponent.class.includes("Mage") ? "+ATK" : "+DEF"}
+             </span>
+          )}
            
-          <div className="w-full bg-gray-800 h-4 rounded-full mt-2 overflow-hidden border border-gray-600 relative">
+          <div className="w-full bg-gray-800 h-4 rounded-full mt-4 overflow-hidden border border-gray-600 relative">
             <div 
               className="bg-red-500 h-full transition-all duration-500"
               style={{ width: `${(battleState.opponentHp / battleState.opponentMaxHp) * 100}%` }}
@@ -131,10 +128,7 @@ export default function BattleView({ player, opponent, onReset }: BattleViewProp
       {/* CONTROLS */}
       <div className="p-4 bg-zinc-900 border-t border-zinc-700">
         {battleState.winner ? (
-          <button 
-            onClick={onReset}
-            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-lg transition-colors"
-          >
+          <button onClick={onReset} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-lg transition-colors">
             PLAY AGAIN
           </button>
         ) : (
@@ -160,7 +154,6 @@ export default function BattleView({ player, opponent, onReset }: BattleViewProp
           </div>
         )}
       </div>
-
     </div>
   );
 }
