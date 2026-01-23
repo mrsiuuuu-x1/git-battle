@@ -1,4 +1,3 @@
-import { stat } from "fs";
 import { Character } from "./github";
 export interface BattleState {
     playerHp: number;
@@ -9,14 +8,21 @@ export interface BattleState {
     winner: string | null;
     turn: number;
     isPlayerTurn: boolean;
+    //Cooldown timers
+    playerHealCd: number;
+    opponentHealCd: number;
 }
+
+// Cooldown amount
+const HEAL_COOLDOWN_TURNS = 3;
+
 // The Nerfing Algorithm
 function normalizeStat(value: number): number {
     if (value <= 0) return 1;
     return Math.floor(Math.log10(value + 1) * 20) + 5;
 }
 
-// NEW Feature: Class Bonus Calculator(buffs/powerups)
+// Feature: Class Bonus Calculator(buffs/powerups)
 function getEffectiveStats(char: Character) {
     let atk = normalizeStat(char.stats.attack);
     let def = normalizeStat(char.stats.defense);
@@ -54,7 +60,9 @@ export function initializeBattle(player: Character, opponent: Character): Battle
         ],
         winner: null,
         turn: 1,
-        isPlayerTurn: playerGoesFirst
+        isPlayerTurn: playerGoesFirst,
+        playerHealCd: 0,
+        opponentHealCd: 0,
     };
 }
 
@@ -88,10 +96,17 @@ export function performPlayerTurn(
         newState.opponentHp -= pDmg;
         newState.logs.push(`Turn ${newState.turn}: You used Commit Storm! -${pDmg} HP`);
     } else if (action === "heal") {
-        //Heal Formula
-        const healAmount = Math.floor(newState.playerMaxHp * 0.25);
+        //Heal LOGIC
+        if (newState.playerHealCd > 0) {
+            newState.logs.push(`Cannot heal yet! Cooldown remaining`);
+            return newState;
+        }
+
+        const healAmount = Math.floor(newState.playerMaxHp * 0.30);
         newState.playerHp = Math.min(newState.playerHp + healAmount, newState.playerMaxHp);
-        newState.logs.push(`Turn ${newState.turn}: You used Merge Shield! +${healAmount} HP`);
+        // set cooldown
+        newState.playerHealCd = HEAL_COOLDOWN_TURNS;
+        newState.logs.push(`Turn ${newState.turn}: You used Merge Shield! +${healAmount} HP. (Cooldown active)`);
     }
 
     // check if opponent died (VICTORY)
@@ -115,24 +130,38 @@ export function performOpponentTurn(
 
     const newState = { ...state, logs: [...state.logs] };
 
+    newState.playerHealCd = Math.max(0, newState.playerHealCd - 1);
+    newState.opponentHealCd = Math.max(0, newState.opponentHealCd - 1);
+
     const pStats = getEffectiveStats(player);
     const oStats = getEffectiveStats(opponent);
 
-    // Opponent Attacks (same formula)
-    const oRandom = (Math.random() * 0.4) + 0.8;
-    let oDmg = Math.floor((oStats.atk * oRandom) - (pStats.def * 0.2));
-    if (oDmg < 1) oDmg = 1;   // Default Damage
+    // AI LOGIC (CHECK IF HP BELOW 40%, heal)
+    const isLowHp = newState.opponentHp < (newState.opponentMaxHp * 0.4);
+    const isHealReady = newState.opponentHealCd === 0;
+    
+    if (isLowHp && isHealReady) {
+        const healAmount = Math.floor(newState.opponentMaxHp * 0.30);
+        newState.opponentHp = Math.min(newState.opponentHp + healAmount , newState.opponentMaxHp);
+        newState.opponentHealCd = HEAL_COOLDOWN_TURNS;
+        newState.logs.push(`Turn ${newState.turn}: ${opponent.username} used Merge Shield! +${healAmount} HP.`);
+    } else {
+            // Opponent Attacks (same formula)
+            const oRandom = (Math.random() * 0.4) + 0.8;
+            let oDmg = Math.floor((oStats.atk * oRandom) - (pStats.def * 0.2));
+            if (oDmg < 1) oDmg = 1;   // Default Damage
 
-    //Enemy CRTICIAL DAMAGE
-    if (oStats.spd > pStats.spd && Math.random() > 0.8) {
-        oDmg = Math.floor(oDmg * 1.5)   // +50% damage buff
-        newState.logs.push(`ENEMY CRIT! They are too fast!`);
+            //Enemy CRTICIAL DAMAGE
+            if (oStats.spd > pStats.spd && Math.random() > 0.8) {
+            oDmg = Math.floor(oDmg * 1.5)   // +50% damage buff
+            newState.logs.push(`ENEMY CRIT! They are too fast!`);
+        }
+
+        newState.playerHp -= oDmg;
+        newState.logs.push(`Turn ${state.turn}: ${opponent.username} hits you for ${oDmg} DMG!`);
     }
 
-    newState.playerHp -= oDmg;
-    newState.logs.push(`Turn ${state.turn}: ${opponent.username} hits you for ${oDmg} DMG!`);
-
-    //checking if player died
+    //checking if player died (DEFEAT!)
     if (newState.playerHp <= 0) {
         newState.playerHp = 0;
         newState.winner = "opponent";

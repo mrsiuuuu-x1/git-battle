@@ -65,9 +65,14 @@ export async function getCharacterProfile(username: string): Promise<Character |
 
     // Map language to Class Name
     let characterClass = "Novice Adventurer";
-    if (["JavaScript", "TypeScript", "CSS", "HTML"].includes(topLanguage)) characterClass = "Frontend Warrior";
-    if (["Python", "Java", "Go", "Rust"].includes(topLanguage)) characterClass = "Backend Mage";
-    if (["Shell", "Dockerfile"].includes(topLanguage)) characterClass = "DevOps Paladin";
+
+    const frontEndLangs = ["JavaScript", "TyoeScript", "CSS", "HTML", "Vue", "Svelte", "Dart", "Swift", "Kotlin", "Objective-C"];
+    const backEndLangs = ["Python", "Java", "Go", "Rust", "C++", "C", "C#", "PHP", "Ruby", "Elixir", "Scala", "Lua", "Solidity"];
+    const devopsLangs = ["Shell", "Dockerfile", "HCL", "Makefile", "PowerShell", "Vim Script", "Nix"];
+
+    if (frontEndLangs.includes(topLanguage)) characterClass = "Frontend Warrior";
+    if (backEndLangs.includes(topLanguage)) characterClass = "Backend Mage";
+    if (devopsLangs.includes(topLanguage)) characterClass = "DevOps Paladin";
 
     return {
       username: profile.login,

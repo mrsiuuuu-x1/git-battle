@@ -10,6 +10,7 @@ export default function UserCard({ character }: UserCardProps) {
   if (character.class === "Frontend Warrior") bonusText = "⚡ +25% SPEED";
   else if (character.class === "Backend Mage") bonusText = "⚔️ +25% ATTACK";
   else if (character.class === "DevOps Paladin") bonusText = "🛡️ +25% DEFENSE";
+  else { bonusText = "⚖️ BALANCED STATS";}
 
   return (
     <div className="relative w-80 bg-zinc-900 border border-zinc-700 rounded-xl overflow-hidden shadow-2xl hover:scale-105 transition-transform duration-300">

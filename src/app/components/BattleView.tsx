@@ -12,15 +12,15 @@ export default function BattleView({ player, opponent, onReset }: BattleViewProp
   const [battleState, setBattleState] = useState<BattleState | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  // 1. Initialize Battle
+  // Initialize Battle
   useEffect(() => {
     setBattleState(initializeBattle(player, opponent));
   }, [player, opponent]);
 
-  // 2. Handle Enemy Turn (Auto)
+  // Handle Enemy Turn (Auto)
   useEffect(() => {
     if (battleState && !battleState.winner && !battleState.isPlayerTurn) {
-      // Small delay so it feels like the enemy is "thinking"
+      // Small delay so it feels like the enemy is thinking
       const timer = setTimeout(() => {
         setBattleState((prev) => prev ? performOpponentTurn(prev, player, opponent) : null);
       }, 1000);
@@ -28,7 +28,7 @@ export default function BattleView({ player, opponent, onReset }: BattleViewProp
     }
   }, [battleState, player, opponent]);
 
-  // 3. Auto-scroll logs
+  // Auto-scroll logs
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -40,6 +40,13 @@ export default function BattleView({ player, opponent, onReset }: BattleViewProp
   const handleAction = (action: "attack" | "heal") => {
     setBattleState((prev) => prev ? performPlayerTurn(prev, player, opponent, action) : null);
   };
+
+  // Helper to determine if heal button is disabled
+  const isHealDisabled = !battleState.isPlayerTurn || battleState.playerHealCd > 0;
+  // Helper button text
+  const healButtonText = battleState.playerHealCd > 0
+    ? `🛡️ Wait (${battleState.playerHealCd})` 
+    : `🛡️ MERGE SHIELD`;
 
   return (
     <div className="w-full max-w-4xl bg-zinc-900 border border-zinc-700 rounded-xl overflow-hidden flex flex-col shadow-2xl">
@@ -117,7 +124,7 @@ export default function BattleView({ player, opponent, onReset }: BattleViewProp
         ))}
       </div>
 
-      {/* CONTROLS (Only visible on Player Turn) */}
+      {/* CONTROLS */}
       <div className="p-4 bg-zinc-900 border-t border-zinc-700">
         {battleState.winner ? (
           <button 
