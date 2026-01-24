@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { Character } from "../lib/github";
 import { BattleState, initializeBattle, performPlayerTurn, performOpponentTurn } from "../lib/gameEngine";
+import { PixelShield, PixelSword, PixelCrossedSwords } from "./PixelIcons";
 
 interface BattleViewProps {
   player: Character;
@@ -81,9 +82,14 @@ export default function BattleView({ player, opponent, onReset }: BattleViewProp
       `}</style>
 
       {/* HEADER */}
-      <h1 className="retro-font text-3xl md:text-5xl text-white mb-10 text-center animate-pulse drop-shadow-[4px_4px_0_rgba(0,0,0,0.5)]">
-        ⚔️ GIT BATTLE ⚔️
-      </h1>
+      <div className="flex justify-center items-center gap-7 mb-10">
+        <PixelCrossedSwords className="w-16 h-16 md:h-16 text-[#fcee09] animate-pulse"/>
+        <h1 className="retro-font text-3xl md:text-5xl text-white text-center drop-shadow-[4px_4px_0_rgba(0,0,0,0.5)]">
+          GIT BATTLE
+        </h1>
+        <PixelCrossedSwords className="w-16 h-16 md:h-16 text-[#fcee09] animate-pulse" />
+      </div>
+      
 
       <div className="w-full max-w-6xl flex flex-col md:flex-row justify-between items-center px-4 gap-8">
         
@@ -176,7 +182,7 @@ export default function BattleView({ player, opponent, onReset }: BattleViewProp
       </div>
 
       {/* CONTROLS */}
-      <div className="w-full max-w-md px-4 mt-8 flex flex-col gap-4">
+      <div className="w-full max-w-md px-4 mt-8 flex flex-col gap-4 z-20">
         {battleState.winner ? (
           <button 
             onClick={onReset}
@@ -189,20 +195,20 @@ export default function BattleView({ player, opponent, onReset }: BattleViewProp
             <button
               onClick={() => handleAction("attack")}
               disabled={!battleState.isPlayerTurn}
-              className="retro-font flex-1 bg-[#ff6b6b] text-white py-4 text-xs md:text-sm border-4 border-black shadow-[6px_6px_0px_#000] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[4px_4px_0px_#000] active:translate-x-[6px] active:translate-y-[6px] active:shadow-none transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="retro-font flex-1 bg-[#ff6b6b] text-white py-4 text-xs md:text-sm border-4 border-black shadow-[6px_6px_0px_#000] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[4px_4px_0px_#000] active:translate-x-[6px] active:translate-y-[6px] active:shadow-none transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              ⚔️ ATTACK
+              <PixelSword className="w-8 h-8"/> ATTACK
             </button>
             <button
               onClick={() => handleAction("heal")}
               disabled={isHealDisabled}
-              className={`retro-font flex-1 text-white py-4 text-xs md:text-sm border-4 border-black shadow-[6px_6px_0px_#000] transition-all
+              className={`retro-font flex-1 text-white py-4 text-xs md:text-sm border-4 border-black shadow-[6px_6px_0px_#000] transition-all flex items-center justify-center gap-2
                 ${isHealDisabled 
                   ? "bg-gray-500 opacity-50 cursor-not-allowed shadow-none translate-x-[2px] translate-y-[2px]" 
                   : "bg-[#4ecdc4] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[4px_4px_0px_#000] active:translate-x-[6px] active:translate-y-[6px] active:shadow-none"
                 }`}
             >
-              🛡️ {healButtonText}
+              <PixelShield className="w-8 h-8"/> {healButtonText}
             </button>
           </div>
         )}
