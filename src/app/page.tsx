@@ -1,147 +1,135 @@
 "use client";
 
 import { useState } from "react";
-import { fetchUserStats } from "./actions";
-import { Character } from "./lib/github";
-import UserCard from "./components/UserCard";
+import { getCharacterProfile, Character } from "./lib/github";
 import BattleView from "./components/BattleView";
 
 export default function Home() {
   // State for Player 1
-  const [playerUsername, setPlayerUsername] = useState("");
-  const [player, setPlayer] = useState<Character | null>(null);
-  
-  // State for Player 2 
-  const [opponentUsername, setOpponentUsername] = useState("");
-  const [opponent, setOpponent] = useState<Character | null>(null);
-
+  const [p1Name, setP1Name] = useState("");
+  const [p2Name, setP2Name] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [battleStarted, setBattleStarted] = useState(false);
+  const [battleData, setBattleData] = useState<{p1: Character; p2: Character} | null>(null);
 
-  // fetch Data
-  const handleSummon = async (username: string, isPlayer: boolean) => {
-    if (!username) return;
+  const handleStart = async () => {
+    if (!p1Name || !p2Name) {
+      setError("{Please enter both usernames!");
+      return;
+    }
     setLoading(true);
     setError("");
 
     try {
-      const data = await fetchUserStats(username);
-      if (data) {
-        if (isPlayer) setPlayer(data);
-        else setOpponent(data);
-      } else {
-        setError(`Could not find warrior: ${username}`);
+      const [p1, p2] = await Promise.all([
+        getCharacterProfile(p1Name),
+        getCharacterProfile(p2Name),
+      ]);
+
+      if (!p1 || !p2) {
+        setError("Could not find one of the users!");
+        setLoading(false);
+        return;
       }
-    } catch (err) {
-      setError("Something went wrong. Check the console.");
-    } finally {
-      setLoading(false);
+      setBattleData({p1, p2});
+    } catch (e) {
+      setError("Error fetching data. Try again.");
     }
+    setLoading(false);
+  };
+
+  const handleReset = () => {
+    setBattleData(null);
+    setP1Name("");
+    setP2Name("");
+    setError("");
   };
 
 return (
-    <main className="min-h-screen bg-black text-white flex flex-col items-center p-8">
-      
-      <h1 className="text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 to-purple-600 mb-12">
-        GIT BATTLE
-      </h1>
+    <main className="min-h-screen bg-gradient-to-br from-[#667eea] to-[#764ba2] flex flex-col items-center justify-center p-4 retro-font relative overflow-hidden">
 
-      {/* BATTLE STARTED -> SHOW ARENA */}
-      {battleStarted && player && opponent ? (
-        <BattleView 
-          player={player} 
-          opponent={opponent} 
-          onReset={() => setBattleStarted(false)} 
-        />
+      {/* Global Font Injection */}
+      <style jsx global>{`
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+        .retro-font { font-family: 'Press Start 2P', monospace;}
+        .pixel-shadow { box-shadow: 6px 6px 0px rgba(0,0,0,1); }
+        .pixel-shadow-sm { box-shadow: 4px 4px 0px rgba(0,0,0,1); }
+        .pixel-input { box-shadow: inset 4px 4px 0px rgba(0,0,0,0.1);}
+      `}</style>
+
+      {/* Decor(Floating icons) */}
+      <div className="absolute top-10 left-10 text-white/10 text-6xl animate-bounce">⚔️</div>
+      <div className="absolute bottom-10 right-10 text-white/10 text-6xl animate-bounce delay-700">🛡️</div>
+      {battleData ? (
+        // show battle arena
+        <div className="w-full max-w-6xl animate-in fade-in zoom-in duration-500">
+          <button
+            onClick={handleReset}
+            className="absolute top-4 left-4 bg-white text-black border-4 border-black px-4 py-2 text-xs hover:bg-gray-200 pixel-shadow-sm z-50"
+          >
+             ← BACK
+          </button>
+          <BattleView
+            player={battleData.p1}
+            opponent={battleData.p2}
+            onReset={handleReset}
+          />
+        </div>
       ) : (
-        // NO BATTLE -> SHOW SUMMONING SCREEN
-        <>
-          {/* Error Banner */}
-          {error && (
-            <div className="bg-red-900/50 text-red-200 px-6 py-3 rounded-lg mb-8 border border-red-800 animate-pulse">
-              {error}
-            </div>
-          )}
+        //show start screen
+        <div className="w-full max-w-lg bg-white/10 background-blur-sm border-4 border-black p-8 md:p-12 text-center pixel-shadow relative z-10">
+          <h1 className="text-3xl md:text-4xl text-white mb-8 leading-relaxed drop-shadow-[4px_4px_0_#000] animate-pulse">
+            GIT BATTLE
+          </h1>
 
-          <div className="flex flex-col md:flex-row gap-12 items-center justify-center w-full max-w-6xl">
-            
-            {/* LEFT: PLAYER */}
-            <div className="flex flex-col items-center gap-4">
-              {!player ? (
-                <div className="bg-zinc-900 p-6 rounded-xl border border-zinc-800 w-80 text-center">
-                  <h2 className="text-xl font-bold mb-4 text-indigo-400">Player 1</h2>
-                  <div className="flex gap-2">
-                    <input
-                      className="bg-black border border-zinc-700 p-2 rounded w-full"
-                      placeholder="Your Username"
-                      value={playerUsername}
-                      onChange={(e) => setPlayerUsername(e.target.value)}
-                    />
-                    <button 
-                      onClick={() => handleSummon(playerUsername, true)}
-                      disabled={loading}
-                      className="bg-indigo-600 px-4 rounded font-bold hover:bg-indigo-500 disabled:opacity-50"
-                    >
-                      GO
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="animate-fade-in-left">
-                  <p className="text-center text-indigo-400 font-bold mb-2">YOU</p>
-                  <UserCard character={player} />
-                  <button onClick={() => setPlayer(null)} className="mt-4 text-xs text-zinc-500 underline">Change</button>
-                </div>
-              )}
+          <div className="space-y-6">
+            {/* Player 1 input */}
+            <div className="text-left">
+              <label className="text-[#ffd700] text-xs mb-2 block text-shadow-[2px_2px_0_#000]">PLAYER 1 (YOU)</label>
+              <input
+                type="text"
+                value={p1Name}
+                onChange={(e) => setP1Name(e.target.value)}
+                placeholder="github-username"
+                className="w-full bg-white border-4 border-black p-4 text-sm text-black outline-none focus:bg-yellow-50 pixel-input placeholder:text-gray-400"
+              />
+            </div>
+          
+            {/* VS BADGE */}
+            <div className="text-white text-xl font-bold py-2 drop-shadow-[2px_2px_0_#000]">- VS -</div>
+
+            {/* player 2 input */}
+            <div className="text-left">
+              <label className="text-[#ff6b6b] text-xs mb-2 block text-shadow-[2px_2px_0_#000]">OPPONENT</label>
+              <input
+                type="text"
+                value={p2Name}
+                onChange={(e) => setP2Name(e.target.value)}
+                placeholder="github-username"
+                className="w-full bg-white border-4 border-black p-4 text-sm text-black outline-none focus:bg-red-50 pixel-input placeholder:text-gray-400"
+              />
             </div>
 
-            <div className="text-4xl font-black italic text-zinc-700">VS</div>
+            {/* ERROR message */}
+            {error && (
+              <div className="bg-[#ff6b6b] text-white text-xs border-4 border-black animate-shake">
+                ⚠️ {error}
+              </div>
+            )}
 
-            {/* RIGHT: OPPONENT */}
-            <div className="flex flex-col items-center gap-4">
-              {!opponent ? (
-                <div className="bg-zinc-900 p-6 rounded-xl border border-zinc-800 w-80 text-center">
-                  <h2 className="text-xl font-bold mb-4 text-red-400">Opponent</h2>
-                  <div className="flex gap-2">
-                    <input
-                      className="bg-black border border-zinc-700 p-2 rounded w-full"
-                      placeholder="Enemy Username"
-                      value={opponentUsername}
-                      onChange={(e) => setOpponentUsername(e.target.value)}
-                    />
-                    <button 
-                      onClick={() => handleSummon(opponentUsername, false)}
-                      disabled={loading}
-                      className="bg-red-600 px-4 rounded font-bold hover:bg-red-500 disabled:opacity-50"
-                    >
-                      GO
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="animate-fade-in-right">
-                  <p className="text-center text-red-400 font-bold mb-2">ENEMY</p>
-                  <UserCard character={opponent} />
-                  <button onClick={() => setOpponent(null)} className="mt-4 text-xs text-zinc-500 underline">Change</button>
-                </div>
-              )}
-            </div>
+            {/* START Btn */}
+            <button
+              onClick={handleStart}
+              disabled={loading}
+              className={`w-full bg-[#4ecdc4] text-white text-lg py-5 border-4 border-black pixel-shadow hover:-translate-y-1 hover:shadow-[8px_8px_0px_#000] active:translate-y-1 active:shadow-none transition-all duration-100
+                ${loading ? "opacity-50 cursor-not-allowed" : "hover:bg-[#45b7af]"}`}
+            >
+              {loading ? "LOADING...":"START BATTLE!"}
+            </button>
           </div>
-
-          {/* FIGHT BUTTON */}
-          {player && opponent && (
-            <div className="mt-12 animate-bounce">
-              <button 
-                className="bg-gradient-to-r from-red-600 to-orange-600 text-white text-2xl font-black py-4 px-12 rounded-full shadow-lg hover:scale-110 transition-transform border-4 border-orange-400"
-                onClick={() => setBattleStarted(true)}
-              >
-                FIGHT!
-              </button>
-            </div>
-          )}
-        </>
+          <div className="mt-8 text-[10px] text-white/60">POWERED BY GITHUB API</div>
+        </div>
       )}
-    </main>
+      </main>
   );
 }

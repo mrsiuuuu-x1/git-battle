@@ -18,26 +18,29 @@ export default function UserCard({ character }: UserCardProps) {
   }
 
   return (
-    <div className="relative w-80 bg-zinc-900 border border-zinc-700 rounded-xl overflow-hidden shadow-2xl hover:scale-105 transition-transform duration-300">
+    <div className="retro-font w-80 bg-white/10 border-4 border-black p-6 shadow-[8px_8px_0px_rgba(0,0,0,0.3)] relative hover:-translate-y-1 hover:shadow-[10px_10px_0px_rgba(0,0,0,0.3)] transition-all duration-200">      
+      {/* Font injection */}
+      <style jsx global>{`
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+        .retro-font { font-family: 'Press Start 2P', monospace;}
+      `}</style>
       
       {/* Header: Avatar & Class */}
-      <div className="bg-gradient-to-b from-zinc-800 to-zinc-900 p-6 flex flex-col items-center border-b border-zinc-700">
+      <div className="flex flex-col items-center border-b-4 border-black pb-4 mb-4">
         <img 
           src={character.avatar} 
           alt={character.username} 
-          className="w-24 h-24 rounded-full border-4 border-indigo-500 shadow-lg mb-4"
+          className="w-24 h-24 rounded-full border-4 border-black shadow-[4px_4px_0px_rgba(0,0,0,0.2)] mb-4 bg-white"
         />
-        <h2 className="text-2xl font-bold text-white">{character.username}</h2>
+        <h2 className="text-lg text-white mb-2 text-center break-all">{character.username}</h2>
         
         {/* Class Badge */}
-        <span className="text-sm font-mono text-indigo-400 bg-indigo-900/30 px-3 py-1 rounded-full mt-2">
-          Lvl {character.level} {character.class}
+        <span className="text-[10px] text-black bg-[#ffd700] px-3 py-1 border-2 border-black shadow-[2px_2px_0px_rgba(0,0,0,0.2)]">
+          Lvl {character.level} {character.class.split(' ')[0]}
         </span>
 
         {/* Bonus Badge */}
-        <span className={`text-xs font-bold mt-2 animate-pulse ${
-          bonusText.includes("BALANCED") ? "text-gray-400" : "text-yellow-400"
-        }`}>
+        <span className="text-[8px] text-[#ff6b6b] mt-2 font-bold animate-pulse">
           {bonusText}
         </span>
       </div>
@@ -47,13 +50,13 @@ export default function UserCard({ character }: UserCardProps) {
         
         {/* HP Stat */}
         <div className="space-y-1">
-          <div className="flex justify-between text-xs font-bold text-gray-400">
+          <div className="flex justify-between text-[10px] text-white">
             <span>HP</span>
             <span>{character.stats.hp}</span>
           </div>
-          <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
+          <div className="h-4 bg-black/50 border-2 border-black">
             <div 
-              className="h-full bg-red-500" 
+              className="h-full bg-[#4ecdc4]" 
               style={{ width: `${Math.min(character.stats.hp / 10, 100)}%` }} 
             />
           </div>
@@ -61,13 +64,13 @@ export default function UserCard({ character }: UserCardProps) {
 
         {/* Attack Stat */}
         <div className="space-y-1">
-          <div className="flex justify-between text-xs font-bold text-gray-400">
-            <span>ATTACK</span>
+          <div className="flex justify-between text-[10px] text-white">
+            <span>ATK</span>
             <span>{character.stats.attack}</span>
           </div>
-          <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
+          <div className="h-4 bg-black/50 border-2 border-black">
             <div 
-              className="h-full bg-yellow-500" 
+              className="h-full bg-[#ff6b6b]" 
               style={{ width: `${Math.min(character.stats.attack, 100)}%` }} 
             />
           </div>
@@ -75,13 +78,13 @@ export default function UserCard({ character }: UserCardProps) {
 
         {/* Defense Stat */}
         <div className="space-y-1">
-          <div className="flex justify-between text-xs font-bold text-gray-400">
+          <div className="flex justify-between text-[10px] text-white">
             <span>DEFENSE</span>
             <span>{character.stats.defense}</span>
           </div>
-          <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
+          <div className="h-4 bg-black/50 border-2 border-black">
             <div 
-              className="h-full bg-blue-500" 
+              className="h-full bg-[#54a0ff]" 
               style={{ width: `${Math.min(character.stats.defense / 5, 100)}%` }} 
             />
           </div>
@@ -89,11 +92,11 @@ export default function UserCard({ character }: UserCardProps) {
 
         {/* Speed Stat */}
         <div className="space-y-1">
-          <div className="flex justify-between text-xs font-bold text-gray-400">
+          <div className="flex justify-between text-[10px] text-white">
             <span>SPEED</span>
             <span>{character.stats.speed}</span>
           </div>
-          <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
+          <div className="h-4 bg-black/50 border-2 border-black">
             <div 
               className="h-full bg-green-500" 
               style={{ width: `${Math.min(character.stats.speed, 100)}%` }} 
