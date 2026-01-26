@@ -19,11 +19,6 @@ export default function UserCard({ character }: UserCardProps) {
 
   return (
     <div className="retro-font w-80 bg-white/10 border-4 border-black p-6 shadow-[8px_8px_0px_rgba(0,0,0,0.3)] relative hover:-translate-y-1 hover:shadow-[10px_10px_0px_rgba(0,0,0,0.3)] transition-all duration-200">      
-      {/* Font injection */}
-      <style jsx global>{`
-        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
-        .retro-font { font-family: 'Press Start 2P', monospace;}
-      `}</style>
       
       {/* Header: Avatar & Class */}
       <div className="flex flex-col items-center border-b-4 border-black pb-4 mb-4">

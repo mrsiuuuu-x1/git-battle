@@ -69,17 +69,6 @@ export default function BattleView({ player, opponent, onReset }: BattleViewProp
   return (
     <div className="w-full min-h-screen bg-gradient-to-br from-[#667eea] to-[#764ba2] font-mono flex flex-col items-center py-10 relative overflow-hidden">
       
-      {/* Import Font & Animations */}
-      <style jsx global>{`
-        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
-        .retro-font { font-family: 'Press Start 2P', monospace; }
-        @keyframes attack-right { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(20px); } }
-        @keyframes attack-left { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(-20px); } }
-        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-10px); } 75% { transform: translateX(10px); } }
-        .attacking-right { animation: attack-right 0.3s ease-in-out; }
-        .attacking-left { animation: attack-left 0.3s ease-in-out; }
-        .damaged { animation: shake 0.3s ease-in-out; }
-      `}</style>
 
       {/* HEADER */}
       <div className="flex justify-center items-center gap-7 mb-10">
@@ -96,7 +85,6 @@ export default function BattleView({ player, opponent, onReset }: BattleViewProp
         {/* PLAYER 1 CARD */}
         <div className={`retro-font w-full md:w-1/3 bg-white/10 border-4 border-black p-6 shadow-[8px_8px_0px_rgba(0,0,0,0.3)] relative transition-transform ${p1Anim === "attacking" ? "attacking-right" : ""} ${p1Anim === "damaged" ? "damaged bg-red-500/30" : ""}`}>
           <div className="flex flex-col items-center">
-            {/* FIXED: Added alt tag */}
             <img 
               src={player.avatar} 
               alt={player.username}
@@ -136,7 +124,6 @@ export default function BattleView({ player, opponent, onReset }: BattleViewProp
         {/* PLAYER 2 CARD */}
         <div className={`retro-font w-full md:w-1/3 bg-white/10 border-4 border-black p-6 shadow-[8px_8px_0px_rgba(0,0,0,0.3)] relative transition-transform ${p2Anim === "attacking" ? "attacking-left" : ""} ${p2Anim === "damaged" ? "damaged bg-red-500/30" : ""}`}>
           <div className="flex flex-col items-center">
-            {/* FIXED: Added alt tag */}
             <img 
               src={opponent.avatar} 
               alt={opponent.username}
@@ -173,11 +160,23 @@ export default function BattleView({ player, opponent, onReset }: BattleViewProp
       {/* LOGS */}
       <div className="w-full max-w-4xl px-4 mt-8">
         <div ref={scrollRef} className="retro-font text-xs bg-black/40 border-4 border-black p-4 h-40 overflow-y-auto shadow-inner space-y-2">
-          {battleState.logs.map((log, i) => (
-            <div key={i} className={`p-2 border-l-4 ${log.includes("attacks") ? "border-[#ff6b6b] bg-white/5" : "border-[#ffd700] bg-white/10"}`}>
-              {log}
-            </div>
-          ))}
+          {battleState.logs.map((log, i) => {
+            let logStyle = "border-[#ffd700] text-gray-300";
+            if (log.includes("hits") || log.includes("DMG")) {
+              logStyle = "border-[#ff6b6b] text-[#ff6b6b] bg-red-900/20";
+            }
+            else if (log.includes("Shield") || log.includes("patches")) {
+              logStyle = "border-[#4ecdc4] text-[4ecdc4] bg-green-900/20";
+            }
+            else if (log.includes("CRITICAL")) {
+              logStyle = "border-orange-500 text-orange-400 font-bold bg-orange-900/20";
+            }
+            return (
+              <div key={i} className={`p-2 border-l-4 ${logStyle}`}>
+                {log}
+              </div>
+            );
+          })}
         </div>
       </div>
 
@@ -195,7 +194,7 @@ export default function BattleView({ player, opponent, onReset }: BattleViewProp
             <button
               onClick={() => handleAction("attack")}
               disabled={!battleState.isPlayerTurn}
-              className="retro-font flex-1 bg-[#ff6b6b] text-white py-4 text-xs md:text-sm border-4 border-black shadow-[6px_6px_0px_#000] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[4px_4px_0px_#000] active:translate-x-[6px] active:translate-y-[6px] active:shadow-none transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              className="retro-font flex-1 bg-[#ff6b6b] text-white py-4 text-xs md:text-sm border-4 border-black shadow-[6px_6px_0px_#000] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-[4px_4px_0px_#000] hover:bg-red-600 active:translate-x-1.5 active:translate-y-1.5 active:shadow-none transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
               <PixelSword className="w-8 h-8"/> ATTACK
             </button>
@@ -204,8 +203,8 @@ export default function BattleView({ player, opponent, onReset }: BattleViewProp
               disabled={isHealDisabled}
               className={`retro-font flex-1 text-white py-4 text-xs md:text-sm border-4 border-black shadow-[6px_6px_0px_#000] transition-all flex items-center justify-center gap-2
                 ${isHealDisabled 
-                  ? "bg-gray-500 opacity-50 cursor-not-allowed shadow-none translate-x-[2px] translate-y-[2px]" 
-                  : "bg-[#4ecdc4] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[4px_4px_0px_#000] active:translate-x-[6px] active:translate-y-[6px] active:shadow-none"
+                  ? "bg-gray-500 opacity-50 cursor-not-allowed shadow-none translate-x-0.5 translate-y-0.5" 
+                  : "bg-[#4ecdc4] hover:translate-x-0.5 hover:translate-y-0.5 hover:shadow-[4px_4px_0px_#000] hover:bg-cyan-600 active:translate-x-1.5 active:translate-y-1.5 active:shadow-none"
                 }`}
             >
               <PixelShield className="w-8 h-8"/> {healButtonText}

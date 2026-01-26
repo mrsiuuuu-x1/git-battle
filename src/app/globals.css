@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
 @import "tailwindcss";
 
 :root {
@@ -48,3 +49,21 @@ body {
   0% {background-position: 0 0;}
   100% {background-position: 40px 40px;}
 }
+
+.retro-font { 
+  font-family: 'Press Start 2P', monospace; 
+}
+
+/* Battle Animations */
+@keyframes attack-right { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(20px); } }
+@keyframes attack-left { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(-20px); } }
+@keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-10px); } 75% { transform: translateX(10px); } }
+
+.attacking-right { animation: attack-right 0.3s ease-in-out; }
+.attacking-left { animation: attack-left 0.3s ease-in-out; }
+.damaged { animation: shake 0.3s ease-in-out; }
+
+/* Pixel Shadows */
+.pixel-shadow { box-shadow: 6px 6px 0px rgba(0,0,0,1); }
+.pixel-shadow-sm { box-shadow: 4px 4px 0px rgba(0,0,0,1); }
+.pixel-input { box-shadow: inset 4px 4px 0px rgba(0,0,0,0.1); }

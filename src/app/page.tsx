@@ -10,9 +10,14 @@ export default function Home() {
   const [p2Name, setP2Name] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  
+  // Data Fetched
   const [battleData, setBattleData] = useState<{ p1: Character; p2: Character } | null>(null);
+  
+  // Battle Started 
+  const [battleStarted, setBattleStarted] = useState(false);
 
-  const handleStart = async () => {
+  const handleFetchData = async () => {
     if (!p1Name || !p2Name) {
       setError("Please enter both usernames!");
       return;
@@ -39,32 +44,29 @@ export default function Home() {
     setLoading(false);
   };
 
+  const handleStartBattle = () => {
+    setBattleStarted(true);
+  };
+
   const handleReset = () => {
     setBattleData(null);
+    setBattleStarted(false);
     setP1Name("");
     setP2Name("");
     setError("");
   };
 
   return (
-    <main className="min-h-screen retro-grid-bg flex flex-col items-center justify-center p-4 retro-font overflow-hidden text-white">
-      
-      <style jsx global>{`
-        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
-        .retro-font { font-family: 'Press Start 2P', monospace; }
-        .pixel-shadow { box-shadow: 6px 6px 0px rgba(0,0,0,1); }
-        .pixel-input { box-shadow: inset 4px 4px 0px rgba(0,0,0,0.1); }
-      `}</style>
+    <main className="min-h-screen retro-grid-bg flex flex-col items-center justify-center p-4 retro-font overflow-hidden text-white relative">
 
-      {battleData ? (
-        // --- BATTLE VIEW SECTION ---
-        // The floating swords are NOT here, so they will disappear!
+      {/* BATTLE ARENA */}
+      {battleData && battleStarted ? (
         <div className="w-full max-w-6xl animate-in fade-in zoom-in duration-500 z-10">
           <button 
             onClick={handleReset} 
             className="absolute top-4 left-4 bg-white text-black border-4 border-black px-4 py-2 text-xs hover:bg-gray-200 pixel-shadow z-50"
           >
-            ← BACK
+            ← EXIT
           </button>
           <BattleView 
             player={battleData.p1} 
@@ -72,8 +74,61 @@ export default function Home() {
             onReset={handleReset} 
           />
         </div>
+      ) : battleData ? (
+        
+        /* STATS PREVIEW */
+        <div className="w-full max-w-5xl flex flex-col items-center animate-in zoom-in duration-300 z-20">
+            <h2 className="text-3xl md:text-5xl mb-8 text-[#fcee09] drop-shadow-[4px_4px_0_#000]">MATCHUP FOUND</h2>
+            
+            <div className="flex flex-col md:flex-row gap-8 items-center justify-center w-full">
+                
+                {/* Player 1 Card */}
+                <div className="bg-white/10 border-4 border-black p-6 pixel-shadow w-full md:w-1/3 flex flex-col items-center relative group hover:bg-white/20 transition-all">
+                    <div className="absolute -top-4 bg-[#ffd700] text-black px-2 py-1 border-2 border-black text-xs">YOU</div>
+                    <img alt="P1" src={battleData.p1.avatar} className="w-32 h-32 rounded-full border-4 border-black mb-4 bg-white" />
+                    <h3 className="text-xl mb-2">{battleData.p1.username}</h3>
+                    <div className="text-xs space-y-2 w-full text-left bg-black/40 p-4 border-2 border-black">
+                        <div className="flex justify-between"><span>CLASS:</span> <span className="text-[#4ecdc4]">{battleData.p1.class}</span></div>
+                        <div className="flex justify-between"><span>HP:</span> <div className="bg-green-600"><span>{battleData.p1.stats.hp}</span></div></div>
+                        <div className="flex justify-between"><span>ATK:</span> <div className="bg-red-600"><span>{battleData.p1.stats.attack}</span></div></div>
+                        <div className="flex justify-between"><span>SPD:</span> <div className="bg-yellow-600"><span>{battleData.p1.stats.speed}</span></div></div>
+                    </div>
+                </div>
+
+                {/* VS Badge */}
+                <div className="text-5xl font-bold text-white drop-shadow-[4px_4px_0_#000] animate-pulse">VS</div>
+
+                {/* Player 2 Card */}
+                <div className="bg-white/10 border-4 border-black p-6 pixel-shadow w-full md:w-1/3 flex flex-col items-center relative group hover:bg-white/20 transition-all">
+                    <div className="absolute -top-4 bg-[#ff6b6b] text-white px-2 py-1 border-2 border-black text-xs">ENEMY</div>
+                    <img alt="P2" src={battleData.p2.avatar} className="w-32 h-32 rounded-full border-4 border-black mb-4 bg-white" />
+                    <h3 className="text-xl mb-2">{battleData.p2.username}</h3>
+                    <div className="text-xs space-y-2 w-full text-left bg-black/40 p-4 border-2 border-black">
+                        <div className="flex justify-between"><span>CLASS:</span> <span className="text-[#ff6b6b]">{battleData.p2.class}</span></div>
+                        <div className="flex justify-between"><span>HP:</span> <div className="bg-green-600"><span>{battleData.p2.stats.hp}</span></div></div>
+                        <div className="flex justify-between"><span>ATK:</span> <div className="bg-red-600"><span>{battleData.p2.stats.attack}</span></div></div>
+                        <div className="flex justify-between"><span>SPD:</span> <div className="bg-yellow-600"><span>{battleData.p2.stats.speed}</span></div></div>
+                    </div>
+                </div>
+            </div>
+
+            <div className="flex gap-16 mt-10">
+                <button 
+                    onClick={handleReset}
+                    className="bg-gray-500 text-white px-8 py-4 border-4 border-black pixel-shadow hover:bg-gray-600"
+                >
+                    CANCEL
+                </button>
+                <button 
+                    onClick={handleStartBattle}
+                    className="bg-[#ff6b6b] text-white px-10 py-4 text-xl border-4 border-black pixel-shadow hover:translate-y-1 hover:bg-red-600 transition-all animate-bounce flex items-center justify-center gap-2"
+                >
+                    FIGHT! <PixelSword className="w-8 h-8" />
+                </button>
+            </div>
+        </div>
+
       ) : (
-        // --- LANDING PAGE SECTION ---
         <>
           <div className="absolute top-10 left-10 text-white/20 animate-bounce">
             <PixelSword className="w-16 h-16" />
@@ -124,12 +179,12 @@ export default function Home() {
               )}
 
               <button
-                onClick={handleStart}
+                onClick={handleFetchData}
                 disabled={loading}
                 className={`w-full bg-[#4ecdc4] text-white text-lg py-5 border-4 border-black pixel-shadow hover:-translate-y-1 hover:shadow-[8px_8px_0px_#000] active:translate-y-1 active:shadow-none transition-all duration-100 flex justify-center items-center gap-3
                   ${loading ? "opacity-50 cursor-not-allowed" : "hover:bg-[#45b7af]"}`}
               >
-                {loading ? "LOADING..." : <>START BATTLE <PixelSword className="w-9 h-9" /></>}
+                {loading ? "LOADING..." : <>GET STATS <PixelSword className="w-9 h-9" /></>}
               </button>
             </div>
           </div>
