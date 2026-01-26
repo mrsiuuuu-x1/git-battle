@@ -17,7 +17,7 @@ export async function getCharacterProfile(username: string): Promise<Character |
     const response = await axios.get(`https://api.github.com/users/${username}`);
     const data = response.data;
 
-    // --- 1. DETERMINE CLASS ---
+    // DETERMINE CLASS
     let userClass = "Novice Adventurer";
     const repos = data.public_repos;
     const followers = data.followers;
@@ -27,9 +27,7 @@ export async function getCharacterProfile(username: string): Promise<Character |
     else if (repos > 20) userClass = "Backend Mage"; 
     else if (repos > 10) userClass = "Frontend Warrior";
 
-    // --- 2. CALCULATE STATS (Deterministic / No Randomness) ---
-    // We use 'let' so we can add Class Bonuses below
-    
+    // CALCULATE STATS 
     // HP: Base 100 + (Repos * 3) + Followers
     let hp = 100 + (repos * 3) + (followers * 1);
 
@@ -42,11 +40,11 @@ export async function getCharacterProfile(username: string): Promise<Character |
     // SPEED: Base 10 + (Repos / 5)
     let speed = 10 + Math.floor(repos / 5);
 
-    // --- 3. CLASS BONUSES ---
-    if (userClass === "Frontend Warrior") speed += 15; // Fast
-    if (userClass === "DevOps Paladin") defense += 10; // Tanky
-    if (userClass === "Backend Mage") attack += 15; // Strong
-    if (userClass === "Full Stack Sorcerer") { // Jack of all trades
+    // CLASS BONUSES
+    if (userClass === "Frontend Warrior") speed += 15;
+    if (userClass === "DevOps Paladin") defense += 10;
+    if (userClass === "Backend Mage") attack += 15;
+    if (userClass === "Full Stack Sorcerer") {
         speed += 5;
         attack += 5;
     }
