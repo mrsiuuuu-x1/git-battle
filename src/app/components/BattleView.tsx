@@ -213,16 +213,27 @@ export default function BattleView({ player, opponent, onReset }: BattleViewProp
         )}
       </div>
 
-      {/* WINNER BANNER OVERLAY */}
+      {/* GAME OVER MODAL */}
       {battleState.winner && (
         <div className="absolute inset-0 bg-black/80 flex items-center justify-center z-50 animate-in fade-in duration-500">
-           <div className="bg-[#ffd700] border-4 border-black p-8 text-center shadow-[0_0_50px_rgba(255,215,0,0.5)] transform scale-100 animate-in zoom-in duration-300">
-             <h2 className="retro-font text-3xl md:text-5xl text-black mb-4">🏆 VICTORY!</h2>
-             <p className="retro-font text-black mb-8">{battleState.winner === "player" ? "YOU WON!" : "YOU LOST..."}</p>
-             <button onClick={onReset} className="retro-font bg-[#ff6b6b] text-white py-4 px-8 border-4 border-black shadow-[6px_6px_0px_#000] hover:shadow-[4px_4px_0px_#000] active:shadow-none transition-all">
-               PLAY AGAIN
-             </button>
-           </div>
+          <div className={`border-8 p-8 text-center pixel-shadow animate-bounce 
+            ${battleState.winner === "player" ? "bg-[#ffd700] border-white text-black" : "bg-[#ff6b6b] border-white text-white"}`}
+          >
+            <h2 className="text-4xl md:text-6xl mb-4 retro-font">
+              {battleState.winner === "player" ? "VICTORY! 🏆" : "GAME OVER 💀"}
+            </h2>
+            
+            <p className="text-xl mb-8 retro-font">
+              {battleState.winner === "player" ? "You defeated the enemy!" : "You were defeated..."}
+            </p>
+
+            <button 
+              onClick={onReset}
+              className="bg-white text-black border-4 border-black px-8 py-4 text-xl hover:bg-gray-200 pixel-shadow retro-font"
+            >
+              PLAY AGAIN
+            </button>
+          </div>
         </div>
       )}
 

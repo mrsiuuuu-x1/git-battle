@@ -1,188 +1,208 @@
+import { PixelShield, PixelSword } from "../components/PixelIcons";
 import { Character } from "./github";
+
 export interface BattleState {
-    playerHp: number;
-    playerMaxHp: number;
-    opponentHp: number;
-    opponentMaxHp: number;
-    logs: string[];
-    winner: string | null;
-    turn: number;
-    isPlayerTurn: boolean;
-    //Cooldown timers
-    playerHealCd: number;
-    opponentHealCd: number;
-    // track num of heals used
-    playerHealsUsed: number;
-    opponentHealsUsed: number;
-}
-
-// Cooldown amount
-const HEAL_COOLDOWN_TURNS = 3;
-const MAX_HEALS = 3;
-
-// The Nerfing Algorithm
-function normalizeStat(value: number): number {
-    if (value <= 0) return 1;
-    return Math.floor(Math.log10(value + 1) * 20) + 5;
-}
-
-// Feature: Class Bonus Calculator(buffs/powerups)
-function getEffectiveStats(char: Character) {
-    let atk = normalizeStat(char.stats.attack);
-    let def = normalizeStat(char.stats.defense);
-    let spd = normalizeStat(char.stats.speed);
-
-    if (char.class === "Frontend Warrior") {
-        spd = Math.floor(spd * 1.25);       // +25% speed
-    } else if (char.class === "Backend Mage") {
-        atk = Math.floor(atk * 1.25);       // +25% attack
-    } else if (char.class === "DevOps Paladin") {
-        def = Math.floor(def * 1.25);       // +25% defense
-    }
-
-    return { atk, def, spd};
+  playerHp: number;
+  playerMaxHp: number;
+  opponentHp: number;
+  opponentMaxHp: number;
+  playerHealsUsed: number;
+  playerHealCd: number;
+  opponentHealCd: number;
+  logs: string[];
+  winner: "player" | "opponent" | null;
+  isPlayerTurn: boolean;
 }
 
 export function initializeBattle(player: Character, opponent: Character): BattleState {
-    const pMax = normalizeStat(player.stats.hp) * 10;
-    const oMax = normalizeStat(opponent.stats.hp) * 10;
-
-    //Decides who goes first based on speed
-    const pStats = getEffectiveStats(player);
-    const oStats = getEffectiveStats(opponent);
-    const playerGoesFirst = pStats.spd >= oStats.spd;
-    
-    return {
-        playerHp: pMax,
-        playerMaxHp: pMax,
-        opponentHp: oMax,
-        opponentMaxHp: oMax,
-        logs: [
-            `Battle Started!`,
-            `${player.username} (${player.class}) VS ${opponent.username} (${opponent.class})`,
-            playerGoesFirst ? "You are faster! You go first." : "Opponent is faster! They go first."
-        ],
-        winner: null,
-        turn: 1,
-        isPlayerTurn: playerGoesFirst,
-        playerHealCd: 0,
-        opponentHealCd: 0,
-        playerHealsUsed: 0,
-        opponentHealsUsed: 0,
-    };
+  return {
+    playerHp: player.stats.hp,
+    playerMaxHp: player.stats.hp,
+    opponentHp: opponent.stats.hp,
+    opponentMaxHp: opponent.stats.hp,
+    playerHealsUsed: 0,
+    playerHealCd: 0,
+    opponentHealCd: 0,
+    logs: ["Battle Started!", `${player.username} (${player.class}) VS ${opponent.username} (${opponent.class})`],
+    winner: null,
+    isPlayerTurn: player.stats.speed >= opponent.stats.speed,
+  };
 }
 
-export function performPlayerTurn(
-    state: BattleState,
-    player: Character,
-    opponent: Character,
-    action: "attack" | "heal"
-): BattleState {
-    if (!state.isPlayerTurn || state.winner) return state;
+// Helper: Calculate raw damage for a single hit
+function getHitDamage(attacker: Character, defender: Character, multiplier: number = 1.0) {
+  let damage = (attacker.stats.attack * 3) + 10;
+  
+  // Defense Mitigation
+  const maxBlock = damage * 0.40;
+  const actualBlock = Math.min(defender.stats.defense,maxBlock);
+  damage = damage - actualBlock;
 
-    const newState = { ...state, logs: [...state.logs] };
+  // Variance (0.85x to 1.15x)
+  const variance = (Math.random() * 0.2) + 0.9;
+  damage = Math.floor(damage * variance);
 
-    //Get Stats with buffs
-    const pStats = getEffectiveStats(player);
-    const oStats = getEffectiveStats(opponent);
+  // Apply ability Multiplier
+  damage = Math.floor(damage * multiplier);
+  damage = Math.max(5, damage);
 
-    if (action === "attack") {
-        // Player Attacks
-        // Damage Formula: attack * random - (defense * 0.2)
-        const pRandom = (Math.random() * 0.4) + 0.8;
-        let pDmg = Math.floor((pStats.atk * pRandom) - (oStats.def * 0.1));
-        if (pDmg < 1) pDmg = 1;    // Default Damage
+  // Critical Hit Logicc
+  let critChance = 0.05; 
+  if (attacker.stats.speed > defender.stats.speed) {
+    critChance += ((attacker.stats.speed - defender.stats.speed) * 0.01);
+  }
+  critChance = Math.min(critChance, 0.50);
 
-        //Critical Hit (based on speed difference)
-        if (pStats.spd > oStats.spd && Math.random() > 0.8) {
-            pDmg = Math.floor(pDmg * 1.5);   // +50% damage
-            newState.logs.push(`CRITICAL HIT! Speed Bonus!`);
-        }
-    
-        newState.opponentHp -= pDmg;
-        newState.logs.push(`Turn ${newState.turn}: You used Commit Storm! -${pDmg} HP`);
-    } else if (action === "heal") {
-        //Heal LOGIC
-        // check limit
-        if (newState.playerHealsUsed >= MAX_HEALS) {
-            newState.logs.push(`No potions left! You cannot heal anymore.`);
-            return newState;
-        }
-        if (newState.playerHealCd > 0) {
-            return newState;
-        }
+  let isCrit = false;
+  if (Math.random() < critChance) {
+    isCrit = true;
+    damage = Math.floor(damage * 1.5);
+  }
 
-        const healAmount = Math.floor(newState.playerMaxHp * 0.30);
-        newState.playerHp = Math.min(newState.playerHp + healAmount, newState.playerMaxHp);
-        // set cooldown
-        newState.playerHealCd = HEAL_COOLDOWN_TURNS;
-        newState.playerHealsUsed += 1; //increment usage
-        newState.logs.push(`Turn ${newState.turn}: You used Merge Shield! +${healAmount} HP. (${MAX_HEALS - newState.playerHealsUsed} left)`);
-    }
-
-    // check if opponent died (VICTORY)
-    if (newState.opponentHp <= 0) {
-        newState.opponentHp = 0;
-        newState.winner = "player";
-        newState.logs.push(`VICTORY! You defeated ${opponent.username}!`);
-        return newState;
-    }
-
-    newState.isPlayerTurn = false;
-    return newState;
+  return { damage, isCrit };
 }
 
-export function performOpponentTurn(
-    state: BattleState,
-    player: Character,
-    opponent: Character
-): BattleState {
-    if (state.isPlayerTurn || state.winner) return state;
+export function performPlayerTurn(state: BattleState, player: Character, opponent: Character, action: "attack" | "heal"): BattleState {
+  const newState = { ...state };
 
-    const newState = { ...state, logs: [...state.logs] };
-    newState.playerHealCd = Math.max(0, newState.playerHealCd - 1);
-    newState.opponentHealCd = Math.max(0, newState.opponentHealCd - 1);
+  if (action === "heal") {
+    const healAmount = Math.floor(player.stats.hp * 0.4);
+    newState.playerHp = Math.min(newState.playerMaxHp, newState.playerHp + healAmount);
+    newState.playerHealsUsed += 1;
+    newState.playerHealCd = 3;
+    newState.logs = [...newState.logs, `You used Merge Shield! +${healAmount} HP.`];
+  } else {
+    // class ability logic
+    const userClass = player.class;
 
-    const pStats = getEffectiveStats(player);
-    const oStats = getEffectiveStats(opponent);
+    if (userClass === "Frontend Warrior") {
+      // ABILITY: PIXEL SLASH (Double Hit with 60% dmg on each hit)
+      const hit1 = getHitDamage(player, opponent, 0.6);
+      const hit2 = getHitDamage(player, opponent, 0.6);
+      const totalDmg = hit1.damage + hit2.damage;
+      
+      newState.opponentHp = Math.max(0, newState.opponentHp - totalDmg);
+      
+      newState.logs = [
+        ...newState.logs, 
+        `PIXEL SLASH!`,
+        `Hit 1: ${hit1.damage} DMG${hit1.isCrit ? " (CRIT!)" : ""}`,
+        `Hit 2: ${hit2.damage} DMG${hit2.isCrit ? " (CRIT!)" : ""}`
+      ];
 
-    // AI LOGIC (CHECK IF HP BELOW 40%, heal)
-    const isLowHp = newState.opponentHp < (newState.opponentMaxHp * 0.4);
-    const isHealReady = newState.opponentHealCd === 0;
-    // check limit
-    const hasHealsLeft = newState.opponentHealsUsed < MAX_HEALS;
-    
-    if (isLowHp && isHealReady && hasHealsLeft) {
-        const healAmount = Math.floor(newState.opponentMaxHp * 0.30);
-        newState.opponentHp = Math.min(newState.opponentHp + healAmount , newState.opponentMaxHp);
-        newState.opponentHealCd = HEAL_COOLDOWN_TURNS;
-        newState.opponentHealsUsed += 1; // increment usage
-        newState.logs.push(`Turn ${newState.turn}: ${opponent.username} used Merge Shield! +${healAmount} HP.`);
+    } else if (userClass === "Backend Mage") {
+      // ABILITY: DDOS BLAST (1.5x Dmg with Self Dmg)
+      const hit = getHitDamage(player, opponent, 1.5);
+      const recoil = Math.floor(player.stats.hp * 0.10); // 10% Recoil
+
+      newState.opponentHp = Math.max(0, newState.opponentHp - hit.damage);
+      newState.playerHp = Math.max(0, newState.playerHp - recoil);
+
+      newState.logs = [
+        ...newState.logs, 
+        `DDOS BLAST! 💥 ${hit.damage} DMG${hit.isCrit ? " (CRIT!)" : ""}`,
+        `Server Overload! You took ${recoil} recoil damage.`
+      ];
+
+    } else if (userClass === "DevOps Paladin") {
+      // ABILITY: CONTAINER SHIELD (1.0x Dmg, Heal 10)
+      const hit = getHitDamage(player, opponent, 1.0);
+      const heal = 10;
+
+      newState.opponentHp = Math.max(0, newState.opponentHp - hit.damage);
+      newState.playerHp = Math.min(newState.playerMaxHp, newState.playerHp + heal);
+
+      newState.logs = [
+        ...newState.logs, 
+        `CONTAINER SHIELD! ${hit.damage} DMG${hit.isCrit ? " (CRIT!)" : ""}`,
+        `You repaired ${heal} HP.`
+      ];
+
     } else {
-            // Opponent Attacks (same formula)
-            const oRandom = (Math.random() * 0.4) + 0.8;
-            let oDmg = Math.floor((oStats.atk * oRandom) - (pStats.def * 0.2));
-            if (oDmg < 1) oDmg = 1;   // Default Damage
-
-            //Enemy CRTICIAL DAMAGE
-            if (oStats.spd > pStats.spd && Math.random() > 0.8) {
-            oDmg = Math.floor(oDmg * 1.5)   // +50% damage buff
-            newState.logs.push(`ENEMY CRIT! They are too fast!`);
-        }
-
-        newState.playerHp -= oDmg;
-        newState.logs.push(`Turn ${state.turn}: ${opponent.username} hits you for ${oDmg} DMG!`);
+      // default damage
+      const hit = getHitDamage(player, opponent, 1.0);
+      newState.opponentHp = Math.max(0, newState.opponentHp - hit.damage);
+      newState.logs = [...newState.logs, `GIT PUSH! ${hit.damage} DMG${hit.isCrit ? " (CRIT!)" : ""}`];
     }
+  }
 
-    //checking if player died (DEFEAT!)
-    if (newState.playerHp <= 0) {
-        newState.playerHp = 0;
-        newState.winner = "opponent";
-        newState.logs.push(`💀 DEFEAT! ${opponent.username} crushed you.`);
-        return newState;
-    }
-
-    newState.isPlayerTurn = true;
-    newState.turn += 1;
+  // victory check
+  if (newState.opponentHp <= 0) {
+    newState.winner = "player";
+    newState.logs.push("🏆 YOU WON!");
     return newState;
+  }
+  
+  // Self-KO Check 
+  if (newState.playerHp <= 0) {
+    newState.winner = "opponent";
+    newState.logs.push("💀 YOU KNOCKED YOURSELF OUT...");
+    return newState;
+  }
+
+  newState.isPlayerTurn = false;
+  return newState;
+}
+
+export function performOpponentTurn(state: BattleState, player: Character, opponent: Character): BattleState {
+  const newState = { ...state };
+
+  if (newState.playerHealCd > 0) newState.playerHealCd -= 1;
+  if (newState.opponentHealCd > 0) newState.opponentHealCd -= 1;
+
+  // Simple AI logic
+  const hpPercent = newState.opponentHp / newState.opponentMaxHp;
+  let shouldHeal = false;
+
+  if (newState.opponentHealCd === 0) {
+     if (hpPercent < 0.25) shouldHeal = Math.random() < 0.80; // Panic
+     else if (hpPercent < 0.50) shouldHeal = Math.random() < 0.30; // Cautious
+  }
+
+  if (shouldHeal) {
+    const healAmount = Math.floor(opponent.stats.hp * 0.3);
+    newState.opponentHp = Math.min(newState.opponentMaxHp, newState.opponentHp + healAmount);
+    newState.opponentHealCd = 4;
+    newState.logs = [...newState.logs, `${opponent.username} patches themselves up! +${healAmount} HP.`];
+  } else {
+    // AI ABILITIES (Mirroring Player Logic)
+    const aiClass = opponent.class;
+
+    if (aiClass === "Frontend Warrior") {
+      const hit1 = getHitDamage(opponent, player, 0.6);
+      const hit2 = getHitDamage(opponent, player, 0.6);
+      const totalDmg = hit1.damage + hit2.damage;
+      newState.playerHp = Math.max(0, newState.playerHp - totalDmg);
+      newState.logs = [...newState.logs, `${opponent.username} uses PIXEL SLASH!`, `Hit 1: ${hit1.damage}`, `Hit 2: ${hit2.damage}`];
+
+    } else if (aiClass === "Backend Mage") {
+      const hit = getHitDamage(opponent, player, 1.5);
+      const recoil = Math.floor(opponent.stats.hp * 0.10);
+      newState.playerHp = Math.max(0, newState.playerHp - hit.damage);
+      newState.opponentHp = Math.max(0, newState.opponentHp - recoil);
+      newState.logs = [...newState.logs, `${opponent.username} uses DDOS BLAST! 💥 ${hit.damage} DMG`, `They took ${recoil} recoil.`];
+
+    } else if (aiClass === "DevOps Paladin") {
+      const hit = getHitDamage(opponent, player, 1.0);
+      const heal = 10;
+      newState.playerHp = Math.max(0, newState.playerHp - hit.damage);
+      newState.opponentHp = Math.min(newState.opponentMaxHp, newState.opponentHp + heal);
+      newState.logs = [...newState.logs, `${opponent.username} uses CONTAINER SHIELD! 🛡️ ${hit.damage} DMG`, `They healed ${heal} HP.`];
+
+    } else {
+      // Default (Novice/Other)
+      const hit = getHitDamage(opponent, player, 1.0);
+      newState.playerHp = Math.max(0, newState.playerHp - hit.damage);
+      newState.logs = [...newState.logs, `${opponent.username} hits you for ${hit.damage} DMG!${hit.isCrit ? " CRIT!" : ""}`];
+    }
+  }
+
+  if (newState.playerHp <= 0) {
+    newState.winner = "opponent";
+    newState.logs.push("💀 YOU LOST...");
+    return newState;
+  }
+
+  newState.isPlayerTurn = true;
+  return newState;
 }
