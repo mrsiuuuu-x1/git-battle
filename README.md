@@ -1,11 +1,11 @@
-# ⚔️ Git Battle
+# Git Battle
 
 **A turn-based RPG where your GitHub stats determine your power.**
 
 Git Battle takes two GitHub usernames, analyzes their profiles (Repositories, Followers, Activity), and generates a unique RPG character class and stats. Battle your friends or famous developers in a retro 8-bit arena!
 
 ![Git Battle Screenshot](./public/screenshot.png) 
-## 🎮 Features
+## Features
 
 * **Real-Time Data:** Fetches live data from the GitHub API.
 * **Class System:** Your coding habits determine your RPG Class:
