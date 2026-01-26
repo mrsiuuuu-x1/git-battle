@@ -1,36 +1,73 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# ⚔️ Git Battle
+
+**A turn-based RPG where your GitHub stats determine your power.**
+
+Git Battle takes two GitHub usernames, analyzes their profiles (Repositories, Followers, Activity), and generates a unique RPG character class and stats. Battle your friends or famous developers in a retro 8-bit arena!
+
+![Git Battle Screenshot](./public/screenshot.png) 
+## 🎮 Features
+
+* **Real-Time Data:** Fetches live data from the GitHub API.
+* **Class System:** Your coding habits determine your RPG Class:
+    * **Frontend Warrior:** High Speed. Special: *Pixel Slash* (Double Hit).
+    * **Backend Mage:** High Attack. Special: *DDoS Blast* (Massive Dmg + Recoil).
+    * **DevOps Paladin:** High Defense. Special: *Container Shield* (Damage + Heal).
+    * **Full Stack Sorcerer:** Balanced Stats.
+* **Strategic Combat:**
+    * **Speed Mechanic:** Faster characters attack first and crit more often.
+    * **Cooldown Management:** Tactical use of Heals and Special Abilities.
+    * **Smart AI:** Opponent AI reacts to low health and cooldowns.
+* **Retro Aesthetic:** Custom pixel fonts, CSS animations, and 8-bit UI design.
+
+## How It Works
+
+The game engine calculates stats based on your GitHub profile:
+* **HP:** Base + Repos + Followers
+* **Attack:** Scaled by Repository count.
+* **Defense:** Scaled by Follower count.
+* **Speed:** Scaled by Repository count (Frontend Warriors get a speed buff).
+* **Variance:** A slight random multiplier ensures no two battles are exactly the same.
+
+## Tech Stack
+
+* **Framework:** [Next.js 15](https://nextjs.org/) (App Router)
+* **Language:** [TypeScript](https://www.typescriptlang.org/)
+* **Styling:** [Tailwind CSS v4](https://tailwindcss.com/)
+* **API:** GitHub REST API
+* **Icons:** Lucide React (Pixelated via CSS)
 
 ## Getting Started
 
-First, run the development server:
+To run locally, follow these steps:
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+1.  **Clone the repository:**
+    ```bash
+    git clone [https://github.com/yourusername/git-battle.git](https://github.com/yourusername/git-battle.git)
+    cd git-battle
+    ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2.  **Install dependencies:**
+    ```bash
+    npm install
+    # or
+    yarn install
+    ```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3.  **Run the development server:**
+    ```bash
+    npm run dev
+    ```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+4.  **Open your browser:**
+    Navigate to [http://localhost:3000](http://localhost:3000)
 
-## Learn More
+## Roadmap (Coming Soon)
 
-To learn more about Next.js, take a look at the following resources:
+* [ ] 💥 Floating Damage Numbers
+* [ ] 🔊 Retro Sound Effects (8-bit sfx)
+* [ ] 🏆 Win Streaks & High Scores
+* [ ] 🌐 Multiplayer Mode (WebSockets)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Contributing
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Pull requests are welcome! For major changes, please open an issue first to discuss what you would like to change.
