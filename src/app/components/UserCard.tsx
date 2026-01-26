@@ -31,7 +31,7 @@ export default function UserCard({ character }: UserCardProps) {
         
         {/* Class Badge */}
         <span className="text-[10px] text-black bg-[#ffd700] px-3 py-1 border-2 border-black shadow-[2px_2px_0px_rgba(0,0,0,0.2)]">
-          Lvl {character.level} {character.class.split(' ')[0]}
+          Lvl 1 {character.class.split(' ')[0]}
         </span>
 
         {/* Bonus Badge */}
