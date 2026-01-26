@@ -63,10 +63,10 @@ To run locally, follow these steps:
 
 ## Roadmap (Coming Soon)
 
-* [ ] 💥 Floating Damage Numbers
-* [ ] 🔊 Retro Sound Effects (8-bit sfx)
-* [ ] 🏆 Win Streaks & High Scores
-* [ ] 🌐 Multiplayer Mode (WebSockets)
+* [ ] Floating Damage Numbers
+* [ ] Retro Sound Effects (8-bit sfx)
+* [ ] Win Streaks & High Scores
+* [ ] Multiplayer Mode (WebSockets)
 
 ## Contributing
 

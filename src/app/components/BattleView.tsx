@@ -181,47 +181,44 @@ export default function BattleView({ player, opponent, onReset }: BattleViewProp
       </div>
 
       {/* CONTROLS */}
-      {/* CONTROLS */}
       <div className="mt-8 flex flex-wrap justify-center gap-4 w-full max-w-2xl">
         
-        {/* 1. BASIC ATTACK */}
+        {/* BASIC ATTACK */}
         <button
           onClick={() => handleAction("attack")}
           disabled={!battleState.isPlayerTurn || !!battleState.winner}
-          className="bg-[#ff6b6b] text-white text-lg md:text-xl px-8 py-4 border-4 border-black pixel-shadow hover:-translate-y-1 hover:shadow-[6px_6px_0px_#000] active:translate-y-1 active:shadow-none transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          className="bg-[#ff6b6b] text-white text-lg md:text-xl px-8 py-4 border-4 border-black pixel-shadow hover:-translate-y-1 hover:shadow-[6px_6px_0px_#000] hover:bg-red-700 active:translate-y-1 active:shadow-none transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
         >
           <PixelSword className="w-6 h-6" /> ATTACK
         </button>
 
-        {/* 2. SPECIAL ABILITY (NEW!) */}
+        {/* SPECIAL ABILITY */}
         <button
           onClick={() => handleAction("special")}
           disabled={!battleState.isPlayerTurn || !!battleState.winner || battleState.playerSpecialCd > 0}
           className={`text-white text-lg md:text-xl px-8 py-4 border-4 border-black pixel-shadow transition-all flex items-center gap-2
             ${battleState.playerSpecialCd > 0 
-              ? "bg-gray-500 cursor-not-allowed opacity-70" // Cooldown Style
-              : "bg-[#845ec2] hover:-translate-y-1 hover:shadow-[6px_6px_0px_#000] active:translate-y-1 active:shadow-none" // Active Style
+              ? "bg-gray-500 cursor-not-allowed opacity-70"
+              : "bg-[#845ec2] hover:-translate-y-1 hover:shadow-[6px_6px_0px_#000] hover:bg-purple-700 active:translate-y-1 active:shadow-none" 
             }`}
         >
-          {/* Dynamic Icon & Text based on Class */}
           <PixelSword className="w-6 h-6" /> 
           {player.class === "Frontend Warrior" ? "PIXEL SLASH" :
            player.class === "Backend Mage" ? "DDOS BLAST" :
            player.class === "DevOps Paladin" ? "SHIELD BASH" :
            "SPECIAL"} 
            
-          {/* Show Cooldown Number if active */}
           {battleState.playerSpecialCd > 0 && ` (${battleState.playerSpecialCd})`}
         </button>
 
-        {/* 3. HEAL */}
+        {/* HEAL */}
         <button
           onClick={() => handleAction("heal")}
           disabled={!battleState.isPlayerTurn || !!battleState.winner || battleState.playerHealCd > 0}
           className={`text-white text-lg md:text-xl px-8 py-4 border-4 border-black pixel-shadow transition-all flex items-center gap-2
             ${battleState.playerHealCd > 0 
               ? "bg-gray-500 cursor-not-allowed opacity-70" 
-              : "bg-[#4ecdc4] hover:-translate-y-1 hover:shadow-[6px_6px_0px_#000] active:translate-y-1 active:shadow-none"
+              : "bg-[#4ecdc4] hover:-translate-y-1 hover:shadow-[6px_6px_0px_#000] hover:bg-cyan-700 active:translate-y-1 active:shadow-none"
             }`}
         >
           <PixelShield className="w-6 h-6" /> 
@@ -232,7 +229,7 @@ export default function BattleView({ player, opponent, onReset }: BattleViewProp
       {/* GAME OVER MODAL */}
       {battleState.winner && (
         <div className="absolute inset-0 bg-black/80 flex items-center justify-center z-50 animate-in fade-in duration-500">
-          <div className={`border-8 p-8 text-center pixel-shadow animate-bounce 
+          <div className={`border-8 p-8 text-center pixel-shadow 
             ${battleState.winner === "player" ? "bg-[#ffd700] border-white text-black" : "bg-[#ff6b6b] border-white text-white"}`}
           >
             <h2 className="text-4xl md:text-6xl mb-4 retro-font">
