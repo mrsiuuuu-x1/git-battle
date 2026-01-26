@@ -8,6 +8,7 @@ export interface BattleState {
   opponentMaxHp: number;
   playerHealsUsed: number;
   playerHealCd: number;
+  playerSpecialCd: number;
   opponentHealCd: number;
   logs: string[];
   winner: "player" | "opponent" | null;
@@ -22,6 +23,7 @@ export function initializeBattle(player: Character, opponent: Character): Battle
     opponentMaxHp: opponent.stats.hp,
     playerHealsUsed: 0,
     playerHealCd: 0,
+    playerSpecialCd: 0,
     opponentHealCd: 0,
     logs: ["Battle Started!", `${player.username} (${player.class}) VS ${opponent.username} (${opponent.class})`],
     winner: null,
@@ -29,20 +31,15 @@ export function initializeBattle(player: Character, opponent: Character): Battle
   };
 }
 
-// Helper: Calculate raw damage for a single hit
+// Helper: Calculate damage
 function getHitDamage(attacker: Character, defender: Character, multiplier: number = 1.0) {
   let damage = (attacker.stats.attack * 3) + 10;
-  
-  // Defense Mitigation
   const maxBlock = damage * 0.40;
   const actualBlock = Math.min(defender.stats.defense,maxBlock);
   damage = damage - actualBlock;
 
-  // Variance (0.85x to 1.15x)
   const variance = (Math.random() * 0.2) + 0.9;
   damage = Math.floor(damage * variance);
-
-  // Apply ability Multiplier
   damage = Math.floor(damage * multiplier);
   damage = Math.max(5, damage);
 
@@ -62,7 +59,7 @@ function getHitDamage(attacker: Character, defender: Character, multiplier: numb
   return { damage, isCrit };
 }
 
-export function performPlayerTurn(state: BattleState, player: Character, opponent: Character, action: "attack" | "heal"): BattleState {
+export function performPlayerTurn(state: BattleState, player: Character, opponent: Character, action: "attack" | "heal" | "special"): BattleState {
   const newState = { ...state };
 
   if (action === "heal") {
@@ -71,9 +68,10 @@ export function performPlayerTurn(state: BattleState, player: Character, opponen
     newState.playerHealsUsed += 1;
     newState.playerHealCd = 3;
     newState.logs = [...newState.logs, `You used Merge Shield! +${healAmount} HP.`];
-  } else {
+  } else if (action === "special") {
     // class ability logic
     const userClass = player.class;
+    newState.playerSpecialCd = 3;
 
     if (userClass === "Frontend Warrior") {
       // ABILITY: PIXEL SLASH (Double Hit with 60% dmg on each hit)
@@ -120,10 +118,16 @@ export function performPlayerTurn(state: BattleState, player: Character, opponen
 
     } else {
       // default damage
-      const hit = getHitDamage(player, opponent, 1.0);
+      const hit = getHitDamage(player, opponent, 1.2);
       newState.opponentHp = Math.max(0, newState.opponentHp - hit.damage);
-      newState.logs = [...newState.logs, `GIT PUSH! ${hit.damage} DMG${hit.isCrit ? " (CRIT!)" : ""}`];
+      newState.logs = [...newState.logs, `HELLO WORLD SMASH! ${hit.damage} DMG${hit.isCrit ? " (CRIT!)" : ""}`];
     }
+  }
+
+  else {
+    const hit = getHitDamage(player,opponent,1.0);
+    newState.opponentHp = Math.max(0,newState.opponentHp - hit.damage);
+    newState.logs = [...newState.logs, `You hit ${opponent.username} for ${hit.damage} DMG!${hit.isCrit ? " CRIT!" : ""}`];
   }
 
   // victory check
@@ -148,6 +152,7 @@ export function performOpponentTurn(state: BattleState, player: Character, oppon
   const newState = { ...state };
 
   if (newState.playerHealCd > 0) newState.playerHealCd -= 1;
+  if (newState.playerSpecialCd > 0) newState.playerSpecialCd -=1;
   if (newState.opponentHealCd > 0) newState.opponentHealCd -= 1;
 
   // Simple AI logic
