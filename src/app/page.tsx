@@ -62,12 +62,6 @@ export default function Home() {
       {/* BATTLE ARENA */}
       {battleData && battleStarted ? (
         <div className="w-full max-w-6xl animate-in fade-in zoom-in duration-500 z-10">
-          <button 
-            onClick={handleReset} 
-            className="absolute top-4 left-4 bg-white text-black border-4 border-black px-4 py-2 text-xs hover:bg-gray-200 pixel-shadow z-50"
-          >
-            ← EXIT
-          </button>
           <BattleView 
             player={battleData.p1} 
             opponent={battleData.p2} 

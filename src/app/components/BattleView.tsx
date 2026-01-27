@@ -11,18 +11,19 @@ interface BattleViewProps {
 
 export default function BattleView({ player, opponent, onReset }: BattleViewProps) {
   const [battleState, setBattleState] = useState<BattleState | null>(null);
+  const [showExitConfirm, setShowExitConfirm] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Animation States
   const [p1Anim, setP1Anim] = useState("");
   const [p2Anim, setP2Anim] = useState("");
 
-  // 1. Initialize Battle
+  // Initialize Battle
   useEffect(() => {
     setBattleState(initializeBattle(player, opponent));
   }, [player, opponent]);
 
-  // 2. Handle Enemy Turn (Auto)
+  // Handle Enemy Turn (Auto)
   useEffect(() => {
     if (battleState && !battleState.winner && !battleState.isPlayerTurn) {
       const timer = setTimeout(() => {
@@ -40,7 +41,7 @@ export default function BattleView({ player, opponent, onReset }: BattleViewProp
     }
   }, [battleState, player, opponent]);
 
-  // 3. Auto-scroll logs
+  // Auto-scroll logs
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -67,8 +68,15 @@ export default function BattleView({ player, opponent, onReset }: BattleViewProp
   else healButtonText = `SHIELD (${healsLeft})`;
 
   return (
-    <div className="w-full min-h-screen bg-gradient-to-br from-[#667eea] to-[#764ba2] font-mono flex flex-col items-center py-10 relative overflow-hidden">
+    <div className="w-full min-h-screen bg-linear-to-br from-[#667eea] to-[#764ba2] font-mono flex flex-col items-center py-10 relative overflow-hidden">
       
+      {/* EXIT BUTTON */}
+      <button
+        onClick={() => setShowExitConfirm(true)}
+        className="absolute top-4 left-4 z-20 bg-white text-black border-4 border-black px-4 py-2 retro-font text-sm hover:bg-red-500 hover:text-white transition-colors shadow-[4px_4px_0px_rgba(0,0,0,0.5)]"
+      >
+        ← EXIT
+      </button>
 
       {/* HEADER */}
       <div className="flex justify-center items-center gap-7 mb-10">
@@ -226,6 +234,30 @@ export default function BattleView({ player, opponent, onReset }: BattleViewProp
           {battleState.playerHealCd > 0 && battleState.playerHealsUsed < 3 && `(${battleState.playerHealCd})`}
         </button>
       </div>
+
+      {/* EXIT CONFIRMATION MODAL */}
+      {showExitConfirm && (
+        <div className="absolute inset-0 bg-black/80 flex items-center justify-center z-50 animate-in fade-in duration-200">
+          <div className="bg-white border-4 border-black p-8 text-center pixel-shadow max-w-sm mx-4">
+            <h3 className="retro-font text-sm mb-6 text-black">RETREAT FROM BATTLE?</h3>
+            <p className="retro-font text-sm mb-6 text-gray-700">Are you sure you want to quit? Current progress will be lost.</p>
+            <div className="flex gap-4 justify-center">
+              <button
+                onClick={() => setShowExitConfirm(false)}
+                className="retro-font px-6 py-3 bg-gray-200 border-4 border-black hover-bg-gray-300 text-black text-sm transition-colors"
+              >
+                NO, FIGHT!
+              </button>
+              <button
+                onClick={onReset}
+                className="retro-font px-6 py-3 bg-[#ff6b6b] border-4 border-black hover-bg-red-600 text-white text-sm transition-colors"
+              >
+                YES, QUIT
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* GAME OVER MODAL */}
       {battleState.winner && (
