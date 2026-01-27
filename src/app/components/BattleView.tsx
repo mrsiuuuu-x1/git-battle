@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { Character } from "../lib/github";
 import { BattleState, initializeBattle, performPlayerTurn, performOpponentTurn } from "../lib/gameEngine";
 import { PixelShield, PixelSword, PixelCrossedSwords } from "./PixelIcons";
+import DamageNumber from "./DamageNumber";
 
 interface BattleViewProps {
   player: Character;
@@ -12,11 +13,31 @@ interface BattleViewProps {
 export default function BattleView({ player, opponent, onReset }: BattleViewProps) {
   const [battleState, setBattleState] = useState<BattleState | null>(null);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
+
+  //state for damage numbers
+  const [damageNumbers, setDamageNumbers] = useState<Array<{id:number,value:string,x:number,y:number,color?:string}>>([]);
+  const nextId = useRef(0);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Animation States
   const [p1Anim, setP1Anim] = useState("");
   const [p2Anim, setP2Anim] = useState("");
+
+  // spawning numbers
+  const spawnNumber = (value: string, target: "player" | "opponent", type: "damage" | "heal") => {
+    const id = nextId.current++;
+    const direction = id % 2 === 0 ? -1 : 1; 
+    const xOffset = direction * 10;
+    const x = (target === "player" ? 25 : 75) + xOffset;
+    const slot = id % 4;
+    const y = 15 + (slot * 10); 
+    const color = type === "damage" ? "#ff6b6b" : "#4ecdc4";
+    setDamageNumbers(prev => [...prev, { id, value, x, y, color }]);
+  };
+
+  const handleDamageComplete = (id: number) => {
+    setDamageNumbers(prev => prev.filter(n => n.id !== id));
+  };
 
   // Initialize Battle
   useEffect(() => {
@@ -30,6 +51,11 @@ export default function BattleView({ player, opponent, onReset }: BattleViewProp
         setBattleState((prev) => {
           if (!prev) return null;
           const newState = performOpponentTurn(prev, player, opponent);
+          //detect damage/heal
+          const dmgTaken = prev.playerHp - newState.playerHp;
+          const healed = newState.opponentHp - prev.opponentHp;
+          if (dmgTaken > 0) spawnNumber(`-${dmgTaken}`,"player","damage");
+          if (healed > 0) spawnNumber(`+${healed}`,"opponent","heal");
           // Trigger Animations
           setP2Anim("attacking"); 
           setTimeout(() => setP1Anim("damaged"), 250); 
@@ -50,13 +76,24 @@ export default function BattleView({ player, opponent, onReset }: BattleViewProp
 
   if (!battleState) return <div className="text-white text-center p-10 font-mono">LOADING BATTLE...</div>;
 
+  // handle player turn
   const handleAction = (action: "attack" | "heal" | "special") => {
-    if (action === "attack") {
+    if (action === "attack" || "special") {
       setP1Anim("attacking"); 
       setTimeout(() => setP2Anim("damaged"), 250); 
       setTimeout(() => { setP1Anim(""); setP2Anim(""); }, 600);
     }
-    setBattleState((prev) => prev ? performPlayerTurn(prev, player, opponent, action) : null);
+    setBattleState((prev) => {
+      if (!prev) return null;
+      const newState = performPlayerTurn(prev,player,opponent,action);
+      // detect damage/heal
+      const dmgDealt = prev.opponentHp - newState.opponentHp;
+      const healed = newState.playerHp - prev.playerHp;
+      if (dmgDealt > 0) spawnNumber(`-${dmgDealt}`,"opponent","damage");
+      if (healed > 0) spawnNumber(`+${healed}`,"player","heal");
+
+      return newState;
+    });
   };
 
   const healsLeft = 3 - battleState.playerHealsUsed;
@@ -70,6 +107,16 @@ export default function BattleView({ player, opponent, onReset }: BattleViewProp
   return (
     <div className="w-full min-h-screen bg-linear-to-br from-[#667eea] to-[#764ba2] font-mono flex flex-col items-center py-10 relative overflow-hidden">
       
+      {/* RENDER DAMAGE LAYERS */}
+      <div className="absolute inset-0 pointer-events-none z-50">
+        {damageNumbers.map(num => (
+          <DamageNumber
+            key={num.id}
+            {...num}
+            onComplete={handleDamageComplete}
+          />
+        ))}
+      </div>
       {/* EXIT BUTTON */}
       <button
         onClick={() => setShowExitConfirm(true)}
