@@ -42,7 +42,7 @@ To run locally, follow these steps:
 
 1.  **Clone the repository:**
     ```bash
-    git clone [https://github.com/yourusername/git-battle.git](https://github.com/yourusername/git-battle.git)
+    git clone [https://github.com/mrsiuuuu-x1/git-battle.git](https://github.com/mrsiuuuu-x1/git-battle.git)
     cd git-battle
     ```
 
