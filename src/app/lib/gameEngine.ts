@@ -65,6 +65,9 @@ export function performPlayerTurn(state: BattleState, player: Character, opponen
   const newState = { ...state };
 
   if (action === "heal") {
+    if (state.playerHealsUsed >= 3) {
+      return state;
+    }
     const healAmount = Math.floor(player.stats.hp * 0.4);
     newState.playerHp = Math.min(newState.playerMaxHp, newState.playerHp + healAmount);
     newState.playerHealsUsed += 1;

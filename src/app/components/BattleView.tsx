@@ -214,15 +214,16 @@ export default function BattleView({ player, opponent, onReset }: BattleViewProp
         {/* HEAL */}
         <button
           onClick={() => handleAction("heal")}
-          disabled={!battleState.isPlayerTurn || !!battleState.winner || battleState.playerHealCd > 0}
+          disabled={!battleState.isPlayerTurn || !!battleState.winner || battleState.playerHealCd > 0 || battleState.playerHealsUsed >= 3}
           className={`text-white text-lg md:text-xl px-8 py-4 border-4 border-black pixel-shadow transition-all flex items-center gap-2
-            ${battleState.playerHealCd > 0 
+            ${(battleState.playerHealCd > 0 || battleState.playerHealsUsed >= 3)
               ? "bg-gray-500 cursor-not-allowed opacity-70" 
               : "bg-[#4ecdc4] hover:-translate-y-1 hover:shadow-[6px_6px_0px_#000] hover:bg-cyan-700 active:translate-y-1 active:shadow-none"
             }`}
         >
-          <PixelShield className="w-6 h-6" /> 
-          HEAL {battleState.playerHealCd > 0 && `(${battleState.playerHealCd})`}
+          <PixelShield className="w-6 h-6" />
+          {battleState.playerHealsUsed >= 3 ? "EMPTY" : "HEAL"}
+          {battleState.playerHealCd > 0 && battleState.playerHealsUsed < 3 && `(${battleState.playerHealCd})`}
         </button>
       </div>
 
