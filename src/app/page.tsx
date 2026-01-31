@@ -9,12 +9,11 @@ import { PixelSword, PixelShield } from "./components/PixelIcons";
 export default function Home() {
   const { data: session, status } = useSession();
   const [isPlaying, setIsPlaying] = useState(false);
+  const [loadingGame, setLoadingGame] = useState(false);
+  const [menuStep, setMenuStep] = useState<"menu" | "difficulty">("menu");
+  const [difficulty, setDifficulty] = useState<"easy" | "medium" | "hard">("medium");
   const [playerData, setPlayerData] = useState<Character | null>(null);
   const [opponentData, setOpponentData] = useState<Character | null>(null);
-  const [loadingGame, setLoadingGame] = useState(false);
-  
-  // Difficulty State
-  const [difficulty, setDifficulty] = useState<"easy" | "medium" | "hard">("medium");
 
   // START GAME (PVE MODE)
   const handleStartGame = async () => {
@@ -29,7 +28,7 @@ export default function Home() {
     setLoadingGame(true);
 
     try {
-      // Fetch Player Data (You)
+      // Fetch Player Data
       const player = await getCharacterProfile(username);
       
       // Pick Bot based on difficulty
@@ -43,13 +42,12 @@ export default function Home() {
         throw new Error("Failed to fetch character data");
       }
 
-      // balance the bot
+      // Apply difficulty balance
       let hpMultiplier = 1.0;
       if (difficulty === "easy") hpMultiplier = 0.8;
       if (difficulty === "medium") hpMultiplier = 1.0;
       if (difficulty === "hard") hpMultiplier = 1.5;
 
-      // Scale Hp
       opponent.stats.hp = Math.floor(player.stats.hp * hpMultiplier);
       opponent.stats.attack = Math.floor(player.stats.attack * hpMultiplier);
       
@@ -72,12 +70,16 @@ export default function Home() {
     );
   }
 
+  // BATTLE VIEW
   if (isPlaying && playerData && opponentData) {
     return (
       <BattleView 
         player={playerData} 
         opponent={opponentData} 
-        onReset={() => setIsPlaying(false)} 
+        onReset={() => {
+            setIsPlaying(false);
+            setMenuStep("menu");
+        }} 
       />
     );
   }
@@ -85,6 +87,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#1a202c] to-[#2d3748] flex flex-col items-center justify-center p-4 relative overflow-hidden">
       
+      {/* GRID BACKGROUND */}
       <div className="absolute inset-0 opacity-10 pointer-events-none" 
         style={{ backgroundImage: 'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)', backgroundSize: '40px 40px' }} 
       />
@@ -97,6 +100,8 @@ export default function Home() {
 
         {status === "authenticated" ? (
           <div className="flex flex-col items-center gap-6 animate-in fade-in duration-500">
+            
+            {/* USER PROFILE HEADER */}
             <div className="flex items-center gap-4 border-b-4 border-black pb-4 w-full justify-center">
               <img 
                 src={session.user?.image || ""} 
@@ -109,30 +114,64 @@ export default function Home() {
               </div>
             </div>
 
-            {/* DIFFICULTY SELECTOR */}
-            <div className="flex gap-2 w-full justify-center">
-              {["easy", "medium", "hard"].map((level) => (
-                <button
-                  key={level}
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  onClick={() => setDifficulty(level as any)}
-                  className={`retro-font px-4 py-2 border-4 border-black text-xs uppercase transition-all
-                    ${difficulty === level 
-                      ? "bg-[#ffd700] text-black translate-y-1 shadow-none" 
-                      : "bg-gray-200 text-gray-500 hover:bg-white shadow-[4px_4px_0_#000]"}`}
-                >
-                  {level}
-                </button>
-              ))}
-            </div>
+            {/* SCREEN 1: MAIN MENU */}
+            {menuStep === "menu" && (
+                <div className="w-full flex flex-col gap-4 animate-in slide-in-from-right duration-300">
+                     <button 
+                        onClick={() => setMenuStep("difficulty")}
+                        className="w-full bg-[#ff6b6b] border-4 border-black text-white retro-font py-4 text-xl hover:bg-red-600 hover:-translate-y-1 hover:shadow-[4px_4px_0_#000] transition-all flex justify-center items-center gap-2"
+                        >
+                        <PixelSword className="w-6 h-6" /> FIGHT AI (PVE)
+                    </button>
 
-            <button 
-              onClick={handleStartGame}
-              className="w-full bg-[#ff6b6b] border-4 border-black text-white retro-font py-4 text-xl hover:bg-red-600 hover:-translate-y-1 hover:shadow-[4px_4px_0_#000] transition-all flex justify-center items-center gap-2"
-            >
-              <PixelSword className="w-6 h-6" /> FIGHT BOT
-            </button>
+                    <button 
+                        disabled
+                        className="w-full bg-gray-600 border-4 border-black text-gray-400 retro-font py-4 text-xl cursor-not-allowed flex justify-center items-center gap-2"
+                        >
+                        <PixelShield className="w-6 h-6" /> MULTIPLAYER (SOON)
+                    </button>
+                </div>
+            )}
 
+            {/* SCREEN 2: DIFFICULTY */}
+            {menuStep === "difficulty" && (
+                <div className="w-full flex flex-col gap-6 animate-in slide-in-from-right duration-300">
+                    
+                    {/* TOGGLES */}
+                    <div className="flex gap-2 w-full justify-center">
+                        {["easy", "medium", "hard"].map((level) => (
+                            <button
+                            key={level}
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                            onClick={() => setDifficulty(level as any)}
+                            className={`retro-font px-4 py-2 border-4 border-black text-xs uppercase transition-all
+                                ${difficulty === level 
+                                ? "bg-[#ffd700] text-black translate-y-1 shadow-none" 
+                                : "bg-gray-200 text-gray-500 hover:bg-white shadow-[4px_4px_0_#000]"}`}
+                            >
+                            {level}
+                            </button>
+                        ))}
+                    </div>
+
+                    <button 
+                        onClick={handleStartGame}
+                        className="w-full bg-[#ff6b6b] border-4 border-black text-white retro-font py-4 text-xl hover:bg-red-600 hover:-translate-y-1 hover:shadow-[4px_4px_0_#000] transition-all flex justify-center items-center gap-2"
+                    >
+                        <PixelSword className="w-6 h-6" /> START BATTLE
+                    </button>
+
+                    {/* BACK BUTTON */}
+                    <button 
+                        onClick={() => setMenuStep("menu")}
+                        className="text-gray-400 retro-font text-xs hover:text-white underline"
+                    >
+                        ← BACK TO MENU
+                    </button>
+                </div>
+            )}
+
+            {/* LOGOUT BUTTON */}
             <button 
               onClick={() => signOut()}
               className="text-gray-400 retro-font text-xs hover:text-white mt-4 underline"
@@ -141,6 +180,7 @@ export default function Home() {
             </button>
           </div>
         ) : (
+          // LOGGED OUT VIEW
           <div className="flex flex-col items-center gap-6">
             <p className="retro-font text-white text-sm md:text-base leading-loose mb-4">
               CONNECT YOUR GITHUB TO ENTER THE ARENA. <br/>
