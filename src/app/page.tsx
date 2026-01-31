@@ -1,189 +1,160 @@
 "use client";
 
 import { useState } from "react";
-import { getCharacterProfile, Character } from "./lib/github";
+import { useSession, signIn, signOut } from "next-auth/react";
 import BattleView from "./components/BattleView";
-import { PixelSword, PixelShield, PixelCrossedSwords } from "./components/PixelIcons"; 
+import { getCharacterProfile, Character } from "./lib/github";
+import { PixelSword, PixelShield } from "./components/PixelIcons";
 
 export default function Home() {
-  const [p1Name, setP1Name] = useState("");
-  const [p2Name, setP2Name] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
+  const { data: session, status } = useSession();
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [playerData, setPlayerData] = useState<Character | null>(null);
+  const [opponentData, setOpponentData] = useState<Character | null>(null);
+  const [loadingGame, setLoadingGame] = useState(false);
   
-  // Data Fetched
-  const [battleData, setBattleData] = useState<{ p1: Character; p2: Character } | null>(null);
-  
-  // Battle Started 
-  const [battleStarted, setBattleStarted] = useState(false);
+  // Difficulty State
+  const [difficulty, setDifficulty] = useState<"easy" | "medium" | "hard">("medium");
 
-  const handleFetchData = async () => {
-    if (!p1Name || !p2Name) {
-      setError("Please enter both usernames!");
+  // START GAME (PVE MODE)
+  const handleStartGame = async () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const username = (session?.user as any)?.username || session?.user?.name;
+    
+    if (!username) {
+      alert("Error: Could not find your username. Try logging out and back in.");
       return;
     }
-    setLoading(true);
-    setError("");
+
+    setLoadingGame(true);
 
     try {
-      const [p1, p2] = await Promise.all([
-        getCharacterProfile(p1Name),
-        getCharacterProfile(p2Name),
-      ]);
+      // Fetch Player Data (You)
+      const player = await getCharacterProfile(username);
+      
+      // Pick Bot based on difficulty
+      let botName = "octocat"; 
+      if (difficulty === "easy") botName = "defunkt"; 
+      if (difficulty === "hard") botName = "torvalds"; 
 
-      if (!p1 || !p2) {
-        setError("Could not find one of the users!");
-        setLoading(false);
-        return;
+      const opponent = await getCharacterProfile(botName); 
+
+      if (!player || !opponent) {
+        throw new Error("Failed to fetch character data");
       }
 
-      setBattleData({ p1, p2 });
-    } catch (e) {
-      setError("Error fetching data. Try again.");
+      // balance the bot
+      let hpMultiplier = 1.0;
+      if (difficulty === "easy") hpMultiplier = 0.8;
+      if (difficulty === "medium") hpMultiplier = 1.0;
+      if (difficulty === "hard") hpMultiplier = 1.5;
+
+      // Scale Hp
+      opponent.stats.hp = Math.floor(player.stats.hp * hpMultiplier);
+      opponent.stats.attack = Math.floor(player.stats.attack * hpMultiplier);
+      
+      setPlayerData(player);
+      setOpponentData(opponent);
+      setIsPlaying(true);
+    } catch (error) {
+      console.error("Failed to load battle data", error);
+      alert("Could not load GitHub data. API limit reached?");
+    } finally {
+      setLoadingGame(false);
     }
-    setLoading(false);
   };
 
-  const handleStartBattle = () => {
-    setBattleStarted(true);
-  };
+  if (status === "loading" || loadingGame) {
+    return (
+      <div className="min-h-screen bg-[#2d3748] flex items-center justify-center">
+        <div className="retro-font text-white text-2xl animate-pulse">LOADING...</div>
+      </div>
+    );
+  }
 
-  const handleReset = () => {
-    setBattleData(null);
-    setBattleStarted(false);
-    setP1Name("");
-    setP2Name("");
-    setError("");
-  };
+  if (isPlaying && playerData && opponentData) {
+    return (
+      <BattleView 
+        player={playerData} 
+        opponent={opponentData} 
+        onReset={() => setIsPlaying(false)} 
+      />
+    );
+  }
 
   return (
-    <main className="min-h-screen retro-grid-bg flex flex-col items-center justify-center p-4 retro-font overflow-hidden text-white relative">
+    <div className="min-h-screen bg-gradient-to-br from-[#1a202c] to-[#2d3748] flex flex-col items-center justify-center p-4 relative overflow-hidden">
+      
+      <div className="absolute inset-0 opacity-10 pointer-events-none" 
+        style={{ backgroundImage: 'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)', backgroundSize: '40px 40px' }} 
+      />
 
-      {/* BATTLE ARENA */}
-      {battleData && battleStarted ? (
-        <div className="w-full max-w-6xl animate-in fade-in zoom-in duration-500 z-10">
-          <BattleView 
-            player={battleData.p1} 
-            opponent={battleData.p2} 
-            onReset={handleReset} 
-          />
-        </div>
-      ) : battleData ? (
+      <div className="z-10 text-center max-w-2xl w-full border-4 border-black bg-white/10 backdrop-blur-sm p-8 shadow-[8px_8px_0_#000]">
         
-        /* STATS PREVIEW */
-        <div className="w-full max-w-5xl flex flex-col items-center animate-in zoom-in duration-300 z-20">
-            <h2 className="text-3xl md:text-5xl mb-8 text-[#fcee09] drop-shadow-[4px_4px_0_#000]">MATCHUP FOUND</h2>
-            
-            <div className="flex flex-col md:flex-row gap-8 items-center justify-center w-full">
-                
-                {/* Player 1 Card */}
-                <div className="bg-white/10 border-4 border-black p-6 pixel-shadow w-full md:w-1/3 flex flex-col items-center relative group hover:bg-white/20 transition-all">
-                    <div className="absolute -top-4 bg-[#ffd700] text-black px-2 py-1 border-2 border-black text-xs">YOU</div>
-                    <img alt="P1" src={battleData.p1.avatar} className="w-32 h-32 rounded-full border-4 border-black mb-4 bg-white" />
-                    <h3 className="text-xl mb-2">{battleData.p1.username}</h3>
-                    <div className="text-xs space-y-2 w-full text-left bg-black/40 p-4 border-2 border-black">
-                        <div className="flex justify-between"><span>CLASS:</span> <span className="text-[#4ecdc4]">{battleData.p1.class}</span></div>
-                        <div className="flex justify-between"><span>HP:</span> <div className="bg-green-600"><span>{battleData.p1.stats.hp}</span></div></div>
-                        <div className="flex justify-between"><span>ATK:</span> <div className="bg-red-600"><span>{battleData.p1.stats.attack}</span></div></div>
-                        <div className="flex justify-between"><span>SPD:</span> <div className="bg-yellow-600"><span>{battleData.p1.stats.speed}</span></div></div>
-                    </div>
-                </div>
+        <h1 className="retro-font text-4xl md:text-6xl text-[#ffd700] mb-8 drop-shadow-[4px_4px_0_#000]">
+          GIT BATTLE
+        </h1>
 
-                {/* VS Badge */}
-                <div className="text-5xl font-bold text-white drop-shadow-[4px_4px_0_#000] animate-pulse">VS</div>
-
-                {/* Player 2 Card */}
-                <div className="bg-white/10 border-4 border-black p-6 pixel-shadow w-full md:w-1/3 flex flex-col items-center relative group hover:bg-white/20 transition-all">
-                    <div className="absolute -top-4 bg-[#ff6b6b] text-white px-2 py-1 border-2 border-black text-xs">ENEMY</div>
-                    <img alt="P2" src={battleData.p2.avatar} className="w-32 h-32 rounded-full border-4 border-black mb-4 bg-white" />
-                    <h3 className="text-xl mb-2">{battleData.p2.username}</h3>
-                    <div className="text-xs space-y-2 w-full text-left bg-black/40 p-4 border-2 border-black">
-                        <div className="flex justify-between"><span>CLASS:</span> <span className="text-[#ff6b6b]">{battleData.p2.class}</span></div>
-                        <div className="flex justify-between"><span>HP:</span> <div className="bg-green-600"><span>{battleData.p2.stats.hp}</span></div></div>
-                        <div className="flex justify-between"><span>ATK:</span> <div className="bg-red-600"><span>{battleData.p2.stats.attack}</span></div></div>
-                        <div className="flex justify-between"><span>SPD:</span> <div className="bg-yellow-600"><span>{battleData.p2.stats.speed}</span></div></div>
-                    </div>
-                </div>
-            </div>
-
-            <div className="flex gap-16 mt-10">
-                <button 
-                    onClick={handleReset}
-                    className="bg-gray-500 text-white px-8 py-4 border-4 border-black pixel-shadow hover:bg-gray-600"
-                >
-                    CANCEL
-                </button>
-                <button 
-                    onClick={handleStartBattle}
-                    className="bg-[#ff6b6b] text-white px-10 py-4 text-xl border-4 border-black pixel-shadow hover:translate-y-1 hover:bg-red-600 transition-all animate-bounce flex items-center justify-center gap-2"
-                >
-                    FIGHT! <PixelSword className="w-8 h-8" />
-                </button>
-            </div>
-        </div>
-
-      ) : (
-        <>
-          <div className="absolute top-10 left-10 text-white/20 animate-bounce">
-            <PixelSword className="w-16 h-16" />
-          </div>
-          <div className="absolute bottom-10 right-10 text-white/20 animate-bounce delay-700">
-            <PixelShield className="w-16 h-16" />
-          </div>
-
-          <div className="w-full max-w-lg bg-[#2d00f7]/80 backdrop-blur-sm border-4 border-black p-8 md:p-12 text-center pixel-shadow relative z-10">
-            
-            <div className="flex justify-center items-center gap-4 mb-8">
-              <PixelCrossedSwords className="w-20 h-16 text-[#fcee09] animate-pulse" />
-              <h1 className="text-3xl md:text-4xl text-white leading-relaxed drop-shadow-[4px_4px_0_#000]">
-                GIT BATTLE
-              </h1>
-              <PixelCrossedSwords className="w-20 h-16 text-[#fcee09] animate-pulse" />
-            </div>
-
-            <div className="space-y-6">
+        {status === "authenticated" ? (
+          <div className="flex flex-col items-center gap-6 animate-in fade-in duration-500">
+            <div className="flex items-center gap-4 border-b-4 border-black pb-4 w-full justify-center">
+              <img 
+                src={session.user?.image || ""} 
+                alt="Avatar" 
+                className="w-16 h-16 border-4 border-black bg-white"
+              />
               <div className="text-left">
-                <label className="text-[#ffd700] text-xs mb-2 block text-shadow-[2px_2px_0_#000]">PLAYER 1 (YOU)</label>
-                <input
-                  type="text"
-                  value={p1Name}
-                  onChange={(e) => setP1Name(e.target.value)}
-                  placeholder="github-username"
-                  className="w-full bg-white border-4 border-black p-4 text-sm text-black outline-none focus:bg-yellow-50 pixel-input placeholder:text-gray-400"
-                />
+                <p className="retro-font text-white text-xs mb-1">WELCOME BACK,</p>
+                <p className="retro-font text-[#4ecdc4] text-xl">{session.user?.name}</p>
               </div>
-
-              <div className="text-white text-xl font-bold py-2 drop-shadow-[2px_2px_0_#000]">- VS -</div>
-
-              <div className="text-left">
-                <label className="text-[#ff6b6b] text-xs mb-2 block text-shadow-[2px_2px_0_#000]">OPPONENT</label>
-                <input
-                  type="text"
-                  value={p2Name}
-                  onChange={(e) => setP2Name(e.target.value)}
-                  placeholder="github-username"
-                  className="w-full bg-white border-4 border-black p-4 text-sm text-black outline-none focus:bg-red-50 pixel-input placeholder:text-gray-400"
-                />
-              </div>
-
-              {error && (
-                <div className="bg-[#ff6b6b] text-white text-xs p-3 border-4 border-black animate-shake">
-                  ⚠️ {error}
-                </div>
-              )}
-
-              <button
-                onClick={handleFetchData}
-                disabled={loading}
-                className={`w-full bg-[#4ecdc4] text-white text-lg py-5 border-4 border-black pixel-shadow hover:-translate-y-1 hover:shadow-[8px_8px_0px_#000] active:translate-y-1 active:shadow-none transition-all duration-100 flex justify-center items-center gap-3
-                  ${loading ? "opacity-50 cursor-not-allowed" : "hover:bg-[#45b7af]"}`}
-              >
-                {loading ? "LOADING..." : <>GET STATS <PixelSword className="w-9 h-9" /></>}
-              </button>
             </div>
+
+            {/* DIFFICULTY SELECTOR */}
+            <div className="flex gap-2 w-full justify-center">
+              {["easy", "medium", "hard"].map((level) => (
+                <button
+                  key={level}
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  onClick={() => setDifficulty(level as any)}
+                  className={`retro-font px-4 py-2 border-4 border-black text-xs uppercase transition-all
+                    ${difficulty === level 
+                      ? "bg-[#ffd700] text-black translate-y-1 shadow-none" 
+                      : "bg-gray-200 text-gray-500 hover:bg-white shadow-[4px_4px_0_#000]"}`}
+                >
+                  {level}
+                </button>
+              ))}
+            </div>
+
+            <button 
+              onClick={handleStartGame}
+              className="w-full bg-[#ff6b6b] border-4 border-black text-white retro-font py-4 text-xl hover:bg-red-600 hover:-translate-y-1 hover:shadow-[4px_4px_0_#000] transition-all flex justify-center items-center gap-2"
+            >
+              <PixelSword className="w-6 h-6" /> FIGHT BOT
+            </button>
+
+            <button 
+              onClick={() => signOut()}
+              className="text-gray-400 retro-font text-xs hover:text-white mt-4 underline"
+            >
+              LOGOUT
+            </button>
           </div>
-        </>
-      )}
-    </main>
+        ) : (
+          <div className="flex flex-col items-center gap-6">
+            <p className="retro-font text-white text-sm md:text-base leading-loose mb-4">
+              CONNECT YOUR GITHUB TO ENTER THE ARENA. <br/>
+              YOUR COMMITS DETERMINE YOUR STRENGTH.
+            </p>
+            <button 
+              onClick={() => signIn("github")}
+              className="bg-[#24292e] border-4 border-black text-white retro-font px-8 py-4 text-lg md:text-xl hover:bg-black hover:-translate-y-1 hover:shadow-[4px_4px_0_#fff] transition-all flex items-center gap-3"
+            >
+             LOGIN WITH GITHUB
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }

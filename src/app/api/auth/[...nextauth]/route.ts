@@ -6,6 +6,7 @@ const handler = NextAuth({
         GithubProvider({
             clientId: process.env.GITHUB_ID!,
             clientSecret: process.env.GITHUB_SECRET!,
+            authorization: { params: { scopre: "read:user" }},
         }),
     ],
     pages: {
@@ -13,9 +14,17 @@ const handler = NextAuth({
     },
     callbacks: {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        async jwt({ token, profile }: any) {
+            if (profile) {
+                token.username = profile.login;;
+            }
+            return token;
+        },
+
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         async session({ session, token }: any) {
-            if (session?.user) {
-                session.user.username = token.sub;
+            if (session.user) {
+                session.user.username = token.username;
             }
             return session;
         },

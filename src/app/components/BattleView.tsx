@@ -100,7 +100,7 @@ export default function BattleView({ player, opponent, onReset }: BattleViewProp
     if (action === "attack") playSound("attack");
     if (action === "heal") playSound("heal");
     if(action === "special") playSound("heal");
-    if (action === "attack" || "special") {
+    if (action === "attack" || action === "special") {
       setP1Anim("attacking"); 
       setTimeout(() => setP2Anim("damaged"), 250); 
       setTimeout(() => { setP1Anim(""); setP2Anim(""); }, 600);
@@ -264,7 +264,7 @@ export default function BattleView({ player, opponent, onReset }: BattleViewProp
         <button
           onClick={() => handleAction("attack")}
           disabled={!battleState.isPlayerTurn || !!battleState.winner}
-          className="bg-[#ff6b6b] text-white text-lg md:text-xl px-8 py-4 border-4 border-black pixel-shadow hover:-translate-y-1 hover:shadow-[6px_6px_0px_#000] hover:bg-red-700 active:translate-y-1 active:shadow-none transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          className="retro-font bg-[#ff6b6b] text-white text-lg md:text-xl px-8 py-4 border-4 border-black pixel-shadow hover:-translate-y-1 hover:shadow-[6px_6px_0px_#000] hover:bg-red-700 active:translate-y-1 active:shadow-none transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
         >
           <PixelSword className="w-6 h-6" /> ATTACK
         </button>
@@ -273,7 +273,7 @@ export default function BattleView({ player, opponent, onReset }: BattleViewProp
         <button
           onClick={() => handleAction("special")}
           disabled={!battleState.isPlayerTurn || !!battleState.winner || battleState.playerSpecialCd > 0}
-          className={`text-white text-lg md:text-xl px-8 py-4 border-4 border-black pixel-shadow transition-all flex items-center gap-2
+          className={`retro-font text-white text-lg md:text-xl px-8 py-4 border-4 border-black pixel-shadow transition-all flex items-center gap-2
             ${battleState.playerSpecialCd > 0 
               ? "bg-gray-500 cursor-not-allowed opacity-70"
               : "bg-[#845ec2] hover:-translate-y-1 hover:shadow-[6px_6px_0px_#000] hover:bg-purple-700 active:translate-y-1 active:shadow-none" 
@@ -292,7 +292,7 @@ export default function BattleView({ player, opponent, onReset }: BattleViewProp
         <button
           onClick={() => handleAction("heal")}
           disabled={!battleState.isPlayerTurn || !!battleState.winner || battleState.playerHealCd > 0 || battleState.playerHealsUsed >= 3}
-          className={`text-white text-lg md:text-xl px-8 py-4 border-4 border-black pixel-shadow transition-all flex items-center gap-2
+          className={`retro-font text-white text-lg md:text-xl px-8 py-4 border-4 border-black pixel-shadow transition-all flex items-center gap-2
             ${(battleState.playerHealCd > 0 || battleState.playerHealsUsed >= 3)
               ? "bg-gray-500 cursor-not-allowed opacity-70" 
               : "bg-[#4ecdc4] hover:-translate-y-1 hover:shadow-[6px_6px_0px_#000] hover:bg-cyan-700 active:translate-y-1 active:shadow-none"
