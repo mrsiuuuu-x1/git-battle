@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from "react";
+import { playSound } from "../lib/sounds";
 import { Character } from "../lib/github";
 import { BattleState, initializeBattle, performPlayerTurn, performOpponentTurn } from "../lib/gameEngine";
 import { PixelShield, PixelSword, PixelCrossedSwords } from "./PixelIcons";
@@ -22,6 +23,18 @@ export default function BattleView({ player, opponent, onReset }: BattleViewProp
   // Animation States
   const [p1Anim, setP1Anim] = useState("");
   const [p2Anim, setP2Anim] = useState("");
+
+
+  // Sound: Check for Winner
+  useEffect(() => {
+    if (battleState?.winner) {
+      if (battleState.winner === "player") {
+        playSound("win");
+      } else {
+        playSound("gameover");
+      }
+    }
+  }, [battleState?.winner]);
 
   // spawning numbers
   const spawnNumber = (value: string, target: "player" | "opponent", type: "damage" | "heal") => {
@@ -54,8 +67,14 @@ export default function BattleView({ player, opponent, onReset }: BattleViewProp
           //detect damage/heal
           const dmgTaken = prev.playerHp - newState.playerHp;
           const healed = newState.opponentHp - prev.opponentHp;
-          if (dmgTaken > 0) spawnNumber(`-${dmgTaken}`,"player","damage");
-          if (healed > 0) spawnNumber(`+${healed}`,"opponent","heal");
+          if (dmgTaken > 0) {
+            spawnNumber(`-${dmgTaken}`,"player","damage");
+            playSound("damage");
+          }
+          if (healed > 0) {
+            spawnNumber(`+${healed}`,"opponent","heal");
+            playSound("heal");
+          }
           // Trigger Animations
           setP2Anim("attacking"); 
           setTimeout(() => setP1Anim("damaged"), 250); 
@@ -78,6 +97,9 @@ export default function BattleView({ player, opponent, onReset }: BattleViewProp
 
   // handle player turn
   const handleAction = (action: "attack" | "heal" | "special") => {
+    if (action === "attack") playSound("attack");
+    if (action === "heal") playSound("heal");
+    if(action === "special") playSound("heal");
     if (action === "attack" || "special") {
       setP1Anim("attacking"); 
       setTimeout(() => setP2Anim("damaged"), 250); 
