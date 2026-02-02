@@ -1,3 +1,4 @@
+import { saveBattleResult } from "../actions";
 import { useEffect, useState, useRef } from "react";
 import { playSound } from "../lib/sounds";
 import { Character } from "../lib/github";
@@ -25,7 +26,7 @@ export default function BattleView({ player, opponent, onReset }: BattleViewProp
   const [p2Anim, setP2Anim] = useState("");
 
 
-  // Sound: Check for Winner
+  //Check for Winner
   useEffect(() => {
     if (battleState?.winner) {
       if (battleState.winner === "player") {
@@ -33,6 +34,12 @@ export default function BattleView({ player, opponent, onReset }: BattleViewProp
       } else {
         playSound("gameover");
       }
+      saveBattleResult(
+        player.username,
+        player.avatar,
+        battleState.winner === "player" ? "WIN" : "LOSS",
+        opponent.username
+      );
     }
   }, [battleState?.winner]);
 
