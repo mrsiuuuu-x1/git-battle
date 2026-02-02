@@ -188,7 +188,7 @@ export default function Home() {
                 </div>
             )}
 
-            {/* SCREEN #: LEADERBOARD */}
+            {/* SCREEN 3: LEADERBOARD */}
             {menuStep === "leaderboard" && (
               <div className="w-full flex flex-col gap-4 animate-in slide-in-from-right duration-300">
                 <h2 className="retro-font text-xl text-center text-[#ffd700] mb-2">HALL OF FAME</h2>
