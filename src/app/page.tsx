@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useSession, signIn, signOut } from "next-auth/react";
+import { getLeaderboard } from "./actions";
 import BattleView from "./components/BattleView";
 import { getCharacterProfile, Character } from "./lib/github";
 import { PixelSword, PixelShield } from "./components/PixelIcons";
@@ -10,10 +11,19 @@ export default function Home() {
   const { data: session, status } = useSession();
   const [isPlaying, setIsPlaying] = useState(false);
   const [loadingGame, setLoadingGame] = useState(false);
-  const [menuStep, setMenuStep] = useState<"menu" | "difficulty">("menu");
+  const [menuStep, setMenuStep] = useState<"menu" | "difficulty" | "leaderboard">("menu");
   const [difficulty, setDifficulty] = useState<"easy" | "medium" | "hard">("medium");
   const [playerData, setPlayerData] = useState<Character | null>(null);
   const [opponentData, setOpponentData] = useState<Character | null>(null);
+  
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [leaderboard, setLeaderboard] = useState<any[]>([]);
+
+  const handleShowLeaderboard = async () => {
+    const data = await getLeaderboard();
+    setLeaderboard(data);
+    setMenuStep("leaderboard");
+  };
 
   // START GAME (PVE MODE)
   const handleStartGame = async () => {
@@ -124,6 +134,13 @@ export default function Home() {
                         <PixelSword className="w-6 h-6" /> FIGHT AI (PVE)
                     </button>
 
+                    <button
+                      onClick={handleShowLeaderboard}
+                      className="w-full bg-[#fcee09] border-4 border-black text-black retro-font py-4 text-xl hover:bg-yellow-400 hover:-translate-y-1 hover:shadow-[4px_4px_0_#000] transition-all flex justify-center items-center gap-2"
+                    >
+                      🏆 LEADERBOARD
+                    </button>
+
                     <button 
                         disabled
                         className="w-full bg-gray-600 border-4 border-black text-gray-400 retro-font py-4 text-xl cursor-not-allowed flex justify-center items-center gap-2"
@@ -169,6 +186,40 @@ export default function Home() {
                         ← BACK TO MENU
                     </button>
                 </div>
+            )}
+
+            {/* SCREEN #: LEADERBOARD */}
+            {menuStep === "leaderboard" && (
+              <div className="w-full flex flex-col gap-4 animate-in slide-in-from-right duration-300">
+                <h2 className="retro-font text-xl text-center text-[#ffd700] mb-2">HALL OF FAME</h2>
+
+                <div className="bg-black/40 border-4 border-black p-4 max-h-60 overflow-y-auto">
+                {leaderboard.length === 0 ? (
+                  <p className="text-white retro-font text-center">NO LEGENDS YET...</p>
+                ) : (
+                  leaderboard.map((player, index) => (
+                    <div key={player.username} className="flex items-center justify-between border-b-2 border-gray-700 py-2 last:border-0">
+                      <div className="flex items-center gap-3">
+                        <span className="text-[#fcee09] retro-font">#{index + 1}</span>
+                        <img src={player.avatar} alt="avatar" className="w-8 h-8 border-2 border-white rounded-full bg-white" />
+                        <span className="text-white retro-font text-sm">{player.username}</span>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-[#4ecdc4] retro-font text-xs block">{player.wins} WINS</span>
+                        <span className="text-gray-500 retro-font text-[10px] block">{player.losses} LOSSES</span>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              <button
+                onClick={() => setMenuStep("menu")}
+                className="text-gray-400 retro-font text-xs hover:text-white underline mt-2 text-center"
+              >
+                ← BACK TO MENU
+              </button>
+            </div>
             )}
 
             {/* LOGOUT BUTTON */}

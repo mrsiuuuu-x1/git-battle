@@ -46,3 +46,23 @@ export async function saveBattleResult(
         return { success: false};
     }
 }
+
+// fetch top 10 players by wins
+export async function getLeaderboard() {
+    try {
+        const topPlayers = await prisma.user.findMany({
+            orderBy: { wins: 'desc'},
+            take: 10,
+            select: {
+                username: true,
+                avatar: true,
+                wins: true,
+                losses: true
+            }
+        });
+        return topPlayers;
+    } catch (error) {
+        console.error("failed to fetch leaderboard:", error);
+        return [];
+    }
+}
