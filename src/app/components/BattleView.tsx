@@ -1,18 +1,23 @@
-import { saveBattleResult } from "../actions";
+"use client";
+
+import { saveBattleResult, sendBattleMove } from "../actions"; // 📡 Added sendBattleMove
 import { useEffect, useState, useRef } from "react";
 import { playSound } from "../lib/sounds";
 import { Character } from "../lib/github";
 import { BattleState, initializeBattle, performPlayerTurn, performOpponentTurn } from "../lib/gameEngine";
 import { PixelShield, PixelSword, PixelCrossedSwords } from "./PixelIcons";
 import DamageNumber from "./DamageNumber";
+import { pusherClient } from "../lib/pusher";
 
 interface BattleViewProps {
   player: Character;
   opponent: Character;
   onReset: () => void;
+  gameMode?: "pve" | "pvp";
+  roomId?: string;
 }
 
-export default function BattleView({ player, opponent, onReset }: BattleViewProps) {
+export default function BattleView({ player, opponent, onReset, gameMode = "pve", roomId }: BattleViewProps) {
   const [battleState, setBattleState] = useState<BattleState | null>(null);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
 
@@ -64,8 +69,62 @@ export default function BattleView({ player, opponent, onReset }: BattleViewProp
     setBattleState(initializeBattle(player, opponent));
   }, [player, opponent]);
 
-  // Handle Enemy Turn (Auto)
+  // MULTIPLAYER LISTENER
   useEffect(() => {
+    if (gameMode === "pvp" && roomId) {
+      const channel = pusherClient.subscribe(roomId);
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      channel.bind("battle-move", (data: any) => {
+        // Only react if the move is NOT from me
+        if (data.attacker !== player.username) {
+            
+            // Apply the move to the local state
+            setBattleState((prev) => {
+                if (!prev) return null;
+
+                const newPlayerHp = Math.max(0, prev.playerHp - (data.damage || 0));
+                const newOpponentHp = Math.min(prev.opponentMaxHp, prev.opponentHp + (data.heal || 0));
+
+                // Trigger Visuals
+                if ((data.damage || 0) > 0) {
+                    spawnNumber(`-${data.damage}`, "player", "damage");
+                    playSound("damage");
+                    setP1Anim("damaged"); // I flinch
+                    setTimeout(() => setP1Anim(""), 600);
+                }
+                if ((data.heal || 0) > 0) {
+                    spawnNumber(`+${data.heal}`, "opponent", "heal");
+                    playSound("heal");
+                }
+
+                // Check for Game Over
+                const winner = newPlayerHp <= 0 ? "opponent" : null;
+
+                return {
+                    ...prev,
+                    playerHp: newPlayerHp,
+                    opponentHp: newOpponentHp,
+                    logs: [data.logMessage, ...prev.logs],
+                    isPlayerTurn: true, // It is now MY turn!
+                    winner: winner,
+                };
+            });
+        }
+      });
+
+      return () => {
+        pusherClient.unsubscribe(roomId);
+      };
+    }
+  }, [gameMode, roomId, player.username]);
+
+
+  // Handle Enemy Turn (Auto - PVE ONLY)
+  useEffect(() => {
+    //checking if multiplayer/ai
+    if (gameMode === "pvp") return;
+
     if (battleState && !battleState.winner && !battleState.isPlayerTurn) {
       const timer = setTimeout(() => {
         setBattleState((prev) => {
@@ -91,7 +150,7 @@ export default function BattleView({ player, opponent, onReset }: BattleViewProp
       }, 1000);
       return () => clearTimeout(timer);
     }
-  }, [battleState, player, opponent]);
+  }, [battleState, player, opponent, gameMode]);
 
   // Auto-scroll logs
   useEffect(() => {
@@ -103,30 +162,43 @@ export default function BattleView({ player, opponent, onReset }: BattleViewProp
   if (!battleState) return <div className="text-white text-center p-10 font-mono">LOADING BATTLE...</div>;
 
   // handle player turn
-  const handleAction = (action: "attack" | "heal" | "special") => {
+  const handleAction = async (action: "attack" | "heal" | "special") => {
     if (action === "attack") playSound("attack");
     if (action === "heal") playSound("heal");
     if(action === "special") playSound("heal");
+    
     if (action === "attack" || action === "special") {
       setP1Anim("attacking"); 
       setTimeout(() => setP2Anim("damaged"), 250); 
       setTimeout(() => { setP1Anim(""); setP2Anim(""); }, 600);
     }
+
     setBattleState((prev) => {
       if (!prev) return null;
       const newState = performPlayerTurn(prev,player,opponent,action);
+      
       // detect damage/heal
       const dmgDealt = prev.opponentHp - newState.opponentHp;
       const healed = newState.playerHp - prev.playerHp;
+      
       if (dmgDealt > 0) spawnNumber(`-${dmgDealt}`,"opponent","damage");
       if (healed > 0) spawnNumber(`+${healed}`,"player","heal");
+
+      // MULTIPLAYER SEND
+      if (gameMode === "pvp" && roomId) {
+        sendBattleMove(roomId, {
+            attacker: player.username,
+            damage: dmgDealt,
+            heal: healed,
+            logMessage: newState.logs[0]
+        });
+      }
 
       return newState;
     });
   };
 
   const healsLeft = 3 - battleState.playerHealsUsed;
-  const isHealDisabled = !battleState.isPlayerTurn || battleState.playerHealCd > 0 || healsLeft <= 0;
   
   let healButtonText = "MERGE SHIELD";
   if (healsLeft <= 0) healButtonText = "EMPTY";
@@ -134,7 +206,7 @@ export default function BattleView({ player, opponent, onReset }: BattleViewProp
   else healButtonText = `SHIELD (${healsLeft})`;
 
   return (
-    <div className="w-full min-h-screen bg-linear-to-br from-[#667eea] to-[#764ba2] font-mono flex flex-col items-center py-10 relative overflow-hidden">
+    <div className="w-full min-h-screen bg-gradient-to-br from-[#667eea] to-[#764ba2] font-mono flex flex-col items-center py-10 relative overflow-hidden">
       
       {/* RENDER DAMAGE LAYERS */}
       <div className="absolute inset-0 pointer-events-none z-50">
