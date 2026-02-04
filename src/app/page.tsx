@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react"; // Added useEffect
+import { useState, useEffect } from "react";
 import { useSession, signIn, signOut } from "next-auth/react";
-import { getLeaderboard, createRoom, getPublicRooms, joinRoomDB, joinMultiplayerRoom, checkRoomStatus } from "./actions"; // Added new actions
+import { getLeaderboard, createRoom, getPublicRooms, joinRoomDB, joinMultiplayerRoom, checkRoomStatus } from "./actions";
 import BattleView from "./components/BattleView";
 import { pusherClient } from "./lib/pusher";
 import { getCharacterProfile, Character } from "./lib/github";
@@ -22,7 +22,7 @@ export default function Home() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const [publicRooms, setPublicRooms] = useState<any[]>([]); // New State for Lobby List
+  const [publicRooms, setPublicRooms] = useState<any[]>([]);
   const [errorMsg, setErrorMsg] = useState("");
 
   const handleShowLeaderboard = async () => {
@@ -55,7 +55,7 @@ export default function Home() {
 
   // START GAME (PVE MODE)
   const handleStartGame = async () => {
-    setGameMode("pve"); // Ensure PVE mode
+    setGameMode("pve");
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const username = (session?.user as any)?.username || session?.user?.name;
     
@@ -322,7 +322,7 @@ export default function Home() {
                             <button 
                             onClick={() => handleJoinSpecificRoom(roomId, false)}
                             disabled={isWaiting}
-                            className="flex-1 bg-[#00e756] border-4 border-black p-3 retro-font hover:bg-green-400 text-black"
+                            className="flex-1 bg-[#00e756] border-4 border-black p-3 retro-font cursor-pointer hover:bg-green-400 text-black"
                             >
                             {isWaiting ? "WAIT..." : "JOIN"}
                             </button>
