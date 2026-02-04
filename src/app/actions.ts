@@ -180,3 +180,22 @@ export async function notifyOpponentLeft(roomId: string, username: string) {
         return { success: false };
     }
 }
+
+export async function checkRoomStatus(roomId: string) {
+    try {
+        const room = await prisma.room.findUnique({
+            where: { id: roomId }
+        });
+        if (!room) {
+            return { success: false, message: "ROOM NOT FOUND" };
+        }
+        if (room.status !== "WAITING") {
+            return { success: false, message: "GAME ALREADY STARTED" };
+        }
+
+        return { success: true };
+    } catch (error) {
+        console.error("CHECK ROOM ERROR:", error);
+        return { success: false, message: "SERVER ERROR" };
+    }
+}

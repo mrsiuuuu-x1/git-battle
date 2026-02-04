@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"; // Added useEffect
 import { useSession, signIn, signOut } from "next-auth/react";
-import { getLeaderboard, createRoom, getPublicRooms, joinRoomDB, joinMultiplayerRoom } from "./actions"; // Added new actions
+import { getLeaderboard, createRoom, getPublicRooms, joinRoomDB, joinMultiplayerRoom, checkRoomStatus } from "./actions"; // Added new actions
 import BattleView from "./components/BattleView";
 import { pusherClient } from "./lib/pusher";
 import { getCharacterProfile, Character } from "./lib/github";
@@ -18,14 +18,12 @@ export default function Home() {
   const [opponentData, setOpponentData] = useState<Character | null>(null);
   const [roomId, setRoomId] = useState("");
   const [isWaiting, setIsWaiting] = useState(false);
-  
-  // 🛡️ CRITICAL FIX: Ensure this state switches correctly
   const [gameMode, setGameMode] = useState<"pve" | "pvp">("pve");
-  
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [publicRooms, setPublicRooms] = useState<any[]>([]); // New State for Lobby List
+  const [errorMsg, setErrorMsg] = useState("");
 
   const handleShowLeaderboard = async () => {
     const data = await getLeaderboard();
@@ -41,9 +39,18 @@ export default function Home() {
 
   // Load rooms when entering multiplayer menu
   useEffect(() => {
+    let interval: NodeJS.Timeout;
     if (menuStep === "multiplayer") {
       refreshLobby();
+
+      interval = setInterval(() => {
+        refreshLobby();
+      }, 22000);
     }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
   }, [menuStep]);
 
   // START GAME (PVE MODE)
@@ -131,6 +138,16 @@ export default function Home() {
     if (!username) return alert("You must be logged in!");
 
     setIsWaiting(true);
+
+    if (!isHost) {
+      const check = await checkRoomStatus(targetRoomId);
+      if (!check.success) {
+        setIsWaiting(false);
+        setErrorMsg(check.message || "INVALID ROOM");
+        return;
+      }
+      await joinRoomDB(targetRoomId, username);
+    }
 
     // Fetch own data
     const myProfile = await getCharacterProfile(username);
@@ -298,7 +315,7 @@ export default function Home() {
                         placeholder="ENTER ROOM ID"
                         className="retro-font p-3 text-black border-4 border-black w-full text-center uppercase"
                         value={roomId}
-                        onChange={(e) => setRoomId(e.target.value)}
+                        onChange={(e) => setRoomId(e.target.value.toUpperCase())}
                         />
                         
                         <div className="flex gap-2">
@@ -351,8 +368,6 @@ export default function Home() {
                                         <button 
                                             onClick={async () => {
                                                 setRoomId(room.id);
-                                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                                                await joinRoomDB(room.id, (session.user as any)?.username || "Guest");
                                                 handleJoinSpecificRoom(room.id, false);
                                             }}
                                             className="bg-[#ff4d4d] text-white cursor-pointer px-4 py-1 border-2 border-black retro-font text-xs hover:bg-red-500"
@@ -416,6 +431,29 @@ export default function Home() {
           </div>
         )}
       </div>
+
+      {/* ERROR MODAL (NOT IN ROOM) */}
+      {errorMsg && (
+        <div className="absolute inset-0 bg-black/80 flex items-center justify-center z-50 animate-in fade-in duration-200">
+          <div className="bg-white border-4 border-black p-8 text-center pixel-shadow max-w-sm mx-4 relative">
+            {/* RED HEADER */}
+            <div className="absolute top-0 left-0 right-0 h-4 bg-[#ff6b6b] border-b-4 border-black"></div>
+            <h3 className="retro-font text-xl mb-4 text-[#ff6b6b] mt-4">ERROR</h3>
+            <p className="retro-font text-sm mb-8 text-black leading-relaxed">
+              {errorMsg === "ROOM NOT FOUND"
+                ? "This Room ID does not exist. Check the code and try again."
+                : errorMsg}
+            </p>
+
+            <button
+              onClick={() => setErrorMsg("")}
+              className="retro-font px-8 py-4 bg-gray-200 border-4 border-black hover:bg-gray-300 text-black text-sm transition-colors w-full cursor-pointer"
+            >
+              CLOSE
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
