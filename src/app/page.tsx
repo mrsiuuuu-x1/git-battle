@@ -117,7 +117,7 @@ export default function Home() {
         opponent={opponentData} 
         onReset={() => {
             setIsPlaying(false);
-            setMenuStep("multiplayer");
+            setMenuStep("menu");
             setRoomId("");
             setIsWaiting(false);
             pusherClient.unsubscribe(roomId);
