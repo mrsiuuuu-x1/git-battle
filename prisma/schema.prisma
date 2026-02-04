@@ -32,3 +32,14 @@ model Battle {
   logs      String[]
   createdAt DateTime @default(now())
 }
+
+model Room {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  
+  host      String
+  guest     String?
+  
+  status    String   @default("WAITING")
+  isPrivate Boolean  @default(false)
+}

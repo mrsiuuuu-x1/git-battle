@@ -1,10 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react"; // Added useEffect
 import { useSession, signIn, signOut } from "next-auth/react";
-import { getLeaderboard } from "./actions";
+import { getLeaderboard, createRoom, getPublicRooms, joinRoomDB, joinMultiplayerRoom } from "./actions"; // Added new actions
 import BattleView from "./components/BattleView";
-import { joinMultiplayerRoom } from "./actions";
 import { pusherClient } from "./lib/pusher";
 import { getCharacterProfile, Character } from "./lib/github";
 import { PixelSword, PixelShield } from "./components/PixelIcons";
@@ -19,10 +18,14 @@ export default function Home() {
   const [opponentData, setOpponentData] = useState<Character | null>(null);
   const [roomId, setRoomId] = useState("");
   const [isWaiting, setIsWaiting] = useState(false);
+  
+  // 🛡️ CRITICAL FIX: Ensure this state switches correctly
   const [gameMode, setGameMode] = useState<"pve" | "pvp">("pve");
   
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [publicRooms, setPublicRooms] = useState<any[]>([]); // New State for Lobby List
 
   const handleShowLeaderboard = async () => {
     const data = await getLeaderboard();
@@ -30,9 +33,22 @@ export default function Home() {
     setMenuStep("leaderboard");
   };
 
+  // Function to refresh the lobby list
+  const refreshLobby = async () => {
+    const { rooms } = await getPublicRooms();
+    setPublicRooms(rooms || []);
+  };
+
+  // Load rooms when entering multiplayer menu
+  useEffect(() => {
+    if (menuStep === "multiplayer") {
+      refreshLobby();
+    }
+  }, [menuStep]);
+
   // START GAME (PVE MODE)
   const handleStartGame = async () => {
-    setGameMode("pve");
+    setGameMode("pve"); // Ensure PVE mode
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const username = (session?.user as any)?.username || session?.user?.name;
     
@@ -94,8 +110,9 @@ export default function Home() {
         opponent={opponentData} 
         onReset={() => {
             setIsPlaying(false);
-            setMenuStep("menu");
+            setMenuStep("multiplayer");
             setRoomId("");
+            setIsWaiting(false);
             pusherClient.unsubscribe(roomId);
         }} 
         gameMode={gameMode}
@@ -104,32 +121,35 @@ export default function Home() {
     );
   }
 
-  const handleJoinRoom = async () => {
+  // JOIN PRIVATE OR PUBLIC ROOM LOGIC
+  const handleJoinSpecificRoom = async (targetRoomId: string) => {
     setGameMode("pvp");
-    if (!roomId) return alert("Please enter a Room ID!");
+    
+    if (!targetRoomId) return alert("Please enter a Room ID!");
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const username = (session?.user as any)?.username || session?.user?.name;
     if (!username) return alert("You must be logged in!");
 
     setIsWaiting(true);
 
-    //fetch own data
+    // Fetch own data
     const myProfile = await getCharacterProfile(username);
     setPlayerData(myProfile);
     
-    const channel = pusherClient.subscribe(roomId);
+    const channel = pusherClient.subscribe(targetRoomId);
 
-    //wait, for someone to join game and then start
+    // Wait for someone to join game and then start
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     channel.bind("user-joined", (incomingPlayer: any) => {
       if (incomingPlayer.username !== username) {
         setOpponentData(incomingPlayer);
         setIsPlaying(true);
-
-        joinMultiplayerRoom(roomId, myProfile);
+        joinMultiplayerRoom(targetRoomId, myProfile);
       }
     });
-    await joinMultiplayerRoom(roomId, myProfile);
+
+    // Notify others I have joined
+    await joinMultiplayerRoom(targetRoomId, myProfile);
   };
 
   return (
@@ -140,7 +160,7 @@ export default function Home() {
         style={{ backgroundImage: 'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)', backgroundSize: '40px 40px' }} 
       />
 
-      <div className="z-10 text-center max-w-2xl w-full border-4 border-black bg-white/10 backdrop-blur-sm p-8 shadow-[8px_8px_0_#000]">
+      <div className="z-10 text-center max-w-4xl w-full border-4 border-black bg-white/10 backdrop-blur-sm p-8 shadow-[8px_8px_0_#000]">
         
         <h1 className="retro-font text-4xl md:text-6xl text-[#ffd700] mb-8 drop-shadow-[4px_4px_0_#000]">
           GIT BATTLE
@@ -164,7 +184,7 @@ export default function Home() {
 
             {/* SCREEN 1: MAIN MENU */}
             {menuStep === "menu" && (
-                <div className="w-full flex flex-col gap-4 animate-in slide-in-from-right duration-300">
+                <div className="w-full max-w-md flex flex-col gap-4 animate-in slide-in-from-right duration-300">
                      <button 
                         onClick={() => setMenuStep("difficulty")}
                         className="w-full bg-[#ff6b6b] border-4 border-black cursor-pointer text-white retro-font py-4 text-xl hover:bg-red-600 hover:-translate-y-1 hover:shadow-[4px_4px_0_#000] transition-all flex justify-center items-center gap-2"
@@ -190,7 +210,7 @@ export default function Home() {
 
             {/* SCREEN 2: DIFFICULTY */}
             {menuStep === "difficulty" && (
-                <div className="w-full flex flex-col gap-6 animate-in slide-in-from-right duration-300">
+                <div className="w-full max-w-md flex flex-col gap-6 animate-in slide-in-from-right duration-300">
                     
                     {/* TOGGLES */}
                     <div className="flex gap-2 w-full justify-center">
@@ -228,7 +248,7 @@ export default function Home() {
 
             {/* SCREEN 3: LEADERBOARD */}
             {menuStep === "leaderboard" && (
-              <div className="w-full flex flex-col gap-4 animate-in slide-in-from-right duration-300">
+              <div className="w-full max-w-md flex flex-col gap-4 animate-in slide-in-from-right duration-300">
                 <h2 className="retro-font text-xl text-center text-[#ffd700] mb-2">HALL OF FAME</h2>
 
                 <div className="bg-black/40 border-4 border-black p-4 max-h-60 overflow-y-auto">
@@ -260,40 +280,113 @@ export default function Home() {
             </div>
             )}
 
-            {/* SCREEN4: MULTIPLAYER LOBBY */}
+            {/* SCREEN 4: MULTIPLAYER LOBBY (SPLIT SCREEN) */}
             {menuStep === "multiplayer" && (
-              <div className="w-full flex flex-col gap-6 animate-in slide-in-from-right duration-300">
-                <h2 className="retro-font text-xl text-center text-[#845ec2] mb-2">ENTER THE ARENA</h2>
+                <div className="flex flex-col md:flex-row gap-6 w-full animate-in zoom-in">
+                    
+                    {/* LEFT: PRIVATE ROOMS */}
+                    <div className="flex-1 bg-black/40 border-4 border-black p-6 flex flex-col gap-4">
+                        <h3 className="retro-font text-[#fcee09] text-xl text-center">🔒 PRIVATE</h3>
+                        <p className="retro-font text-xs text-gray-300 text-center">Share a code with a friend.</p>
+                        
+                        <input 
+                        type="text" 
+                        placeholder="ENTER ROOM ID"
+                        className="retro-font p-3 text-black border-4 border-black w-full text-center uppercase"
+                        value={roomId}
+                        onChange={(e) => setRoomId(e.target.value)}
+                        />
+                        
+                        <div className="flex gap-2">
+                            <button 
+                            onClick={() => handleJoinSpecificRoom(roomId)}
+                            disabled={isWaiting}
+                            className="flex-1 bg-[#00e756] border-4 border-black p-3 retro-font hover:bg-green-400 text-black"
+                            >
+                            {isWaiting ? "WAIT..." : "JOIN"}
+                            </button>
+                            <button 
+                            onClick={async () => {
+                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                const res = await createRoom((session.user as any)?.username || "Player", true);
+                                if(res.success && res.roomId) {
+                                    setRoomId(res.roomId);
+                                    alert(`Room Created! Share this ID: ${res.roomId}`);
+                                    // Auto-join logic
+                                    handleJoinSpecificRoom(res.roomId);
+                                }
+                            }}
+                            className="flex-1 bg-[#845ec2] border-4 border-black p-3 retro-font text-white hover:bg-purple-500"
+                            >
+                            CREATE
+                            </button>
+                        </div>
+                    </div>
 
-                <div className="bg-black/40 border-4 border-black p-6 flex flex-col gap-4">
-                <p className="text-white retro-font text-sm text-center">
-                  ENTER A ROOM ID TO JOIN A FRIEND
-                </p>
+                    {/* RIGHT: PUBLIC LOBBY */}
+                    <div className="flex-1 bg-black/40 border-4 border-black p-6 flex flex-col gap-4 h-[400px]">
+                        <div className="flex justify-between items-center border-b-4 border-white pb-2">
+                            <h3 className="retro-font text-[#ff4d4d] text-xl">🌍 PUBLIC</h3>
+                            <button onClick={refreshLobby} className="text-xs retro-font text-white hover:text-yellow-400">
+                                🔄 REFRESH
+                            </button>
+                        </div>
 
-                <input
-                  type="text"
-                  placeholder="ROOM-123"
-                  value={roomId}
-                  onChange={(e) => setRoomId(e.target.value)}
-                  className="w-full bg-white border-4 border-black p-3 retro-font text-center text-xl text-black uppercase placeholder:text-gray-400 focus:outline-none focus:shadow-[4px_4px_0_#845ec2]"
-                />
+                        {/* ROOM LIST */}
+                        <div className="flex-1 overflow-y-auto flex flex-col gap-2 pr-2">
+                            {publicRooms.length === 0 ? (
+                                <div className="text-center text-gray-400 retro-font text-xs mt-10">
+                                    NO BATTLES FOUND.<br/>START ONE!
+                                </div>
+                            ) : (
+                                publicRooms.map((room) => (
+                                    <div key={room.id} className="bg-white p-2 border-4 border-black flex justify-between items-center">
+                                        <div>
+                                            <p className="retro-font text-xs text-gray-500">HOST</p>
+                                            <p className="retro-font text-sm font-bold text-black">{room.host}</p>
+                                        </div>
+                                        <button 
+                                            onClick={async () => {
+                                                setRoomId(room.id);
+                                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                                await joinRoomDB(room.id, (session.user as any)?.username || "Guest");
+                                                handleJoinSpecificRoom(room.id);
+                                            }}
+                                            className="bg-[#ff4d4d] text-white px-4 py-1 border-2 border-black retro-font text-xs hover:bg-red-500"
+                                        >
+                                            FIGHT
+                                        </button>
+                                    </div>
+                                ))
+                            )}
+                        </div>
 
+                        <button 
+                            onClick={async () => {
+                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                const res = await createRoom((session.user as any)?.username || "Player", false);
+                                if (res.success && res.roomId) {
+                                    setRoomId(res.roomId);
+                                    handleJoinSpecificRoom(res.roomId);
+                                }
+                            }}
+                            className="w-full bg-[#fcee09] border-4 border-black p-3 retro-font text-black hover:bg-yellow-300"
+                        >
+                            + CREATE PUBLIC ROOM
+                        </button>
+                    </div>
+
+                </div>
+            )}
+
+            {/* MULTIPLAYER BACK BUTTON */}
+            {menuStep === "multiplayer" && (
                 <button
-                onClick={handleJoinRoom}
-                disabled={isWaiting}
-                  className="w-full bg-[#fcee09] border-4 border-black text-black retro-font py-3 text-lg hover:bg-yellow-400 hover:-translate-y-1 hover:shadow-[4px_4px_0_#fff] transition-all cursor-pointer"
+                    onClick={() => setMenuStep("menu")}
+                    className="text-gray-400 retro-font text-xs hover:text-white underline text-center cursor-pointer"
                 >
-                  {isWaiting ? "WAITING FOR OPPONENT..." : "JOIN ROOM"}
+                    ← BACK TO MENU
                 </button>
-              </div>
-
-              <button
-                onClick={() => setMenuStep("menu")}
-                className="text-gray-400 retro-font text-xs hover:text-white underline text-center cursor-pointer"
-              >
-                ← BACK TO MENU
-              </button>
-            </div>
             )}
 
             {/* LOGOUT BUTTON */}

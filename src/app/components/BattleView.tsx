@@ -1,6 +1,6 @@
 "use client";
 
-import { saveBattleResult, sendBattleMove } from "../actions"; // 📡 Added sendBattleMove
+import { saveBattleResult, sendBattleMove } from "../actions"; 
 import { useEffect, useState, useRef } from "react";
 import { playSound } from "../lib/sounds";
 import { Character } from "../lib/github";
@@ -21,17 +21,20 @@ export default function BattleView({ player, opponent, onReset, gameMode = "pve"
   const [battleState, setBattleState] = useState<BattleState | null>(null);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
 
-  //state for damage numbers
+  // State for damage numbers
   const [damageNumbers, setDamageNumbers] = useState<Array<{id:number,value:string,x:number,y:number,color?:string}>>([]);
   const nextId = useRef(0);
   const scrollRef = useRef<HTMLDivElement>(null);
+  
+  // (bug fix) MEMORY REF: Remembers the last move to prevent duplicates
+  const lastMoveId = useRef<number>(0);
 
   // Animation States
   const [p1Anim, setP1Anim] = useState("");
   const [p2Anim, setP2Anim] = useState("");
 
 
-  //Check for Winner
+  // Check for Winner
   useEffect(() => {
     if (battleState?.winner) {
       if (battleState.winner === "player") {
@@ -48,7 +51,7 @@ export default function BattleView({ player, opponent, onReset, gameMode = "pve"
     }
   }, [battleState?.winner]);
 
-  // spawning numbers
+  // Spawning numbers
   const spawnNumber = (value: string, target: "player" | "opponent", type: "damage" | "heal") => {
     const id = nextId.current++;
     const direction = id % 2 === 0 ? -1 : 1; 
@@ -75,45 +78,68 @@ export default function BattleView({ player, opponent, onReset, gameMode = "pve"
       const channel = pusherClient.subscribe(roomId);
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      channel.bind("battle-move", (data: any) => {
-        // Only react if the move is NOT from me
-        if (data.attacker !== player.username) {
-            
-            // Apply the move to the local state
-            setBattleState((prev) => {
-                if (!prev) return null;
+      const handleMove = (data: any) => {
+        // SAFETY CHECK: Ignore my own moves
+        if (data.attacker === player.username) return;
 
-                const newPlayerHp = Math.max(0, prev.playerHp - (data.damage || 0));
-                const newOpponentHp = Math.min(prev.opponentMaxHp, prev.opponentHp + (data.heal || 0));
-
-                // Trigger Visuals
-                if ((data.damage || 0) > 0) {
-                    spawnNumber(`-${data.damage}`, "player", "damage");
-                    playSound("damage");
-                    setP1Anim("damaged"); // I flinch
-                    setTimeout(() => setP1Anim(""), 600);
-                }
-                if ((data.heal || 0) > 0) {
-                    spawnNumber(`+${data.heal}`, "opponent", "heal");
-                    playSound("heal");
-                }
-
-                // Check for Game Over
-                const winner = newPlayerHp <= 0 ? "opponent" : null;
-
-                return {
-                    ...prev,
-                    playerHp: newPlayerHp,
-                    opponentHp: newOpponentHp,
-                    logs: [data.logMessage, ...prev.logs],
-                    isPlayerTurn: true, // It is now MY turn!
-                    winner: winner,
-                };
-            });
+        // SAFETY CHECK: Ignore Duplicate Moves 
+        if (data.moveId && data.moveId === lastMoveId.current) {
+            console.log("Blocked duplicate move:", data.moveId);
+            return;
         }
-      });
+        
+        // Remember this move ID
+        if (data.moveId) lastMoveId.current = data.moveId;
 
+        console.log("Processing move:", data);
+
+        setBattleState((prev) => {
+          if (!prev) return null;
+
+          let newHealCd = prev.playerHealCd;
+          let newSpecialCd = prev.playerSpecialCd;
+
+          if (newHealCd > 0) newHealCd -= 1;
+          if (newSpecialCd > 0) newSpecialCd -= 1;
+
+          // Calculate new health
+          const newPlayerHp = Math.max(0, prev.playerHp - (data.damage || 0));
+          const newOpponentHp = Math.min(prev.opponentMaxHp, prev.opponentHp + (data.heal || 0));
+
+          // Trigger Visuals
+          if ((data.damage || 0) > 0) {
+              spawnNumber(`-${data.damage}`, "player", "damage");
+              playSound("damage");
+              setP1Anim("damaged"); // I flinch
+              setTimeout(() => setP1Anim(""), 600);
+          }
+
+          if ((data.heal || 0) > 0) {
+              spawnNumber(`+${data.heal}`, "opponent", "heal");
+              playSound("heal");
+          }
+          // Check for Game Over
+          const winner = newPlayerHp <= 0 ? "opponent" : null;
+
+          return {
+                ...prev,
+                playerHp: newPlayerHp,
+                opponentHp: newOpponentHp,
+                playerHealCd: newHealCd,
+                playerSpecialCd: newSpecialCd,
+                logs: [data.logMessage, ...prev.logs],
+                isPlayerTurn: true, // It is now MY turn!
+                winner: winner,
+            };
+          });
+      };      
+          
+      // Bind listener
+      channel.bind("battle-move", handleMove);
+
+      // Unbind everything
       return () => {
+        channel.unbind("battle-move", handleMove);
         pusherClient.unsubscribe(roomId);
       };
     }
@@ -122,7 +148,7 @@ export default function BattleView({ player, opponent, onReset, gameMode = "pve"
 
   // Handle Enemy Turn (Auto - PVE ONLY)
   useEffect(() => {
-    //checking if multiplayer/ai
+    // Checking if multiplayer/ai
     if (gameMode === "pvp") return;
 
     if (battleState && !battleState.winner && !battleState.isPlayerTurn) {
@@ -130,7 +156,7 @@ export default function BattleView({ player, opponent, onReset, gameMode = "pve"
         setBattleState((prev) => {
           if (!prev) return null;
           const newState = performOpponentTurn(prev, player, opponent);
-          //detect damage/heal
+          // Detect damage/heal
           const dmgTaken = prev.playerHp - newState.playerHp;
           const healed = newState.opponentHp - prev.opponentHp;
           if (dmgTaken > 0) {
@@ -161,41 +187,45 @@ export default function BattleView({ player, opponent, onReset, gameMode = "pve"
 
   if (!battleState) return <div className="text-white text-center p-10 font-mono">LOADING BATTLE...</div>;
 
-  // handle player turn
+  // Handle Action
   const handleAction = async (action: "attack" | "heal" | "special") => {
+    // Play Sounds & Animations
     if (action === "attack") playSound("attack");
     if (action === "heal") playSound("heal");
-    if(action === "special") playSound("heal");
+    if (action === "special") playSound("attack");
     
     if (action === "attack" || action === "special") {
       setP1Anim("attacking"); 
       setTimeout(() => setP2Anim("damaged"), 250); 
       setTimeout(() => { setP1Anim(""); setP2Anim(""); }, 600);
     }
+    
+    if (!battleState) return;
+    const newState = performPlayerTurn(battleState, player, opponent, action);
+    
+    // Detect changes
+    const dmgDealt = battleState.opponentHp - newState.opponentHp;
+    const healed = newState.playerHp - battleState.playerHp;
+    
+    // Update UI visuals 
+    if (dmgDealt > 0) spawnNumber(`-${dmgDealt}`,"opponent","damage");
+    if (healed > 0) spawnNumber(`+${healed}`,"player","heal");
 
-    setBattleState((prev) => {
-      if (!prev) return null;
-      const newState = performPlayerTurn(prev,player,opponent,action);
-      
-      // detect damage/heal
-      const dmgDealt = prev.opponentHp - newState.opponentHp;
-      const healed = newState.playerHp - prev.playerHp;
-      
-      if (dmgDealt > 0) spawnNumber(`-${dmgDealt}`,"opponent","damage");
-      if (healed > 0) spawnNumber(`+${healed}`,"player","heal");
+    setBattleState(newState);
 
-      // MULTIPLAYER SEND
-      if (gameMode === "pvp" && roomId) {
-        sendBattleMove(roomId, {
-            attacker: player.username,
-            damage: dmgDealt,
-            heal: healed,
-            logMessage: newState.logs[0]
-        });
-      }
-
-      return newState;
-    });
+    // Send Network Request
+    if (gameMode === "pvp" && roomId) {
+        try {
+            await sendBattleMove(roomId, {
+                attacker: player.username,
+                damage: dmgDealt,
+                heal: healed,
+                logMessage: newState.logs[0]
+            });
+        } catch (error) {
+            console.error("Failed to send move:", error);
+        }
+    }
   };
 
   const healsLeft = 3 - battleState.playerHealsUsed;
@@ -382,6 +412,25 @@ export default function BattleView({ player, opponent, onReset, gameMode = "pve"
           {battleState.playerHealCd > 0 && battleState.playerHealsUsed < 3 && `(${battleState.playerHealCd})`}
         </button>
       </div>
+
+      {/* WAITING FOR OPPONENT / LEAVE BUTTON */}
+      {!battleState.isPlayerTurn && !battleState.winner && (
+         <div className="flex flex-col items-center gap-2 mt-4">
+             <p className="text-center text-white retro-font text-sm animate-pulse">
+                {gameMode === "pvp" ? "WAITING FOR OPPONENT..." : "OPPONENT IS THINKING..."}
+             </p>
+             
+             {/* Escape Hatch if opponent disconnects */}
+             {gameMode === "pvp" && (
+                 <button 
+                    onClick={() => setShowExitConfirm(true)}
+                    className="text-[10px] text-gray-400 hover:text-white underline retro-font"
+                 >
+                    Taking too long? Leave Battle
+                 </button>
+             )}
+         </div>
+      )}
 
       {/* EXIT CONFIRMATION MODAL */}
       {showExitConfirm && (
