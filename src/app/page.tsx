@@ -122,10 +122,10 @@ export default function Home() {
   }
 
   // JOIN PRIVATE OR PUBLIC ROOM LOGIC
-  const handleJoinSpecificRoom = async (targetRoomId: string) => {
+  const handleJoinSpecificRoom = async (targetRoomId: string, isHost: boolean) => {
     setGameMode("pvp");
-    
     if (!targetRoomId) return alert("Please enter a Room ID!");
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const username = (session?.user as any)?.username || session?.user?.name;
     if (!username) return alert("You must be logged in!");
@@ -138,18 +138,22 @@ export default function Home() {
     
     const channel = pusherClient.subscribe(targetRoomId);
 
-    // Wait for someone to join game and then start
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    channel.bind("user-joined", (incomingPlayer: any) => {
+    channel.bind("user-joined", async (incomingPlayer: any) => {
       if (incomingPlayer.username !== username) {
         setOpponentData(incomingPlayer);
         setIsPlaying(true);
-        joinMultiplayerRoom(targetRoomId, myProfile);
+        if (isHost) {
+          await joinMultiplayerRoom(targetRoomId, myProfile);
+        }
       }
     });
 
-    // Notify others I have joined
-    await joinMultiplayerRoom(targetRoomId, myProfile);
+    if (!isHost) {
+      setTimeout(async () => {
+        await joinMultiplayerRoom(targetRoomId, myProfile);
+      }, 500);
+    }
   };
 
   return (
@@ -280,7 +284,7 @@ export default function Home() {
             </div>
             )}
 
-            {/* SCREEN 4: MULTIPLAYER LOBBY (SPLIT SCREEN) */}
+            {/* SCREEN 4: MULTIPLAYER LOBBY */}
             {menuStep === "multiplayer" && (
                 <div className="flex flex-col md:flex-row gap-6 w-full animate-in zoom-in">
                     
@@ -299,7 +303,7 @@ export default function Home() {
                         
                         <div className="flex gap-2">
                             <button 
-                            onClick={() => handleJoinSpecificRoom(roomId)}
+                            onClick={() => handleJoinSpecificRoom(roomId, false)}
                             disabled={isWaiting}
                             className="flex-1 bg-[#00e756] border-4 border-black p-3 retro-font hover:bg-green-400 text-black"
                             >
@@ -311,12 +315,11 @@ export default function Home() {
                                 const res = await createRoom((session.user as any)?.username || "Player", true);
                                 if(res.success && res.roomId) {
                                     setRoomId(res.roomId);
-                                    alert(`Room Created! Share this ID: ${res.roomId}`);
                                     // Auto-join logic
-                                    handleJoinSpecificRoom(res.roomId);
+                                    handleJoinSpecificRoom(res.roomId, true);
                                 }
                             }}
-                            className="flex-1 bg-[#845ec2] border-4 border-black p-3 retro-font text-white hover:bg-purple-500"
+                            className="flex-1 bg-[#845ec2] cursor-pointer border-4 border-black p-3 retro-font text-white hover:bg-purple-500"
                             >
                             CREATE
                             </button>
@@ -327,7 +330,7 @@ export default function Home() {
                     <div className="flex-1 bg-black/40 border-4 border-black p-6 flex flex-col gap-4 h-[400px]">
                         <div className="flex justify-between items-center border-b-4 border-white pb-2">
                             <h3 className="retro-font text-[#ff4d4d] text-xl">🌍 PUBLIC</h3>
-                            <button onClick={refreshLobby} className="text-xs retro-font text-white hover:text-yellow-400">
+                            <button onClick={refreshLobby} className="text-xs retro-font cursor-pointer text-white hover:text-yellow-400">
                                 🔄 REFRESH
                             </button>
                         </div>
@@ -350,9 +353,9 @@ export default function Home() {
                                                 setRoomId(room.id);
                                                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                                 await joinRoomDB(room.id, (session.user as any)?.username || "Guest");
-                                                handleJoinSpecificRoom(room.id);
+                                                handleJoinSpecificRoom(room.id, false);
                                             }}
-                                            className="bg-[#ff4d4d] text-white px-4 py-1 border-2 border-black retro-font text-xs hover:bg-red-500"
+                                            className="bg-[#ff4d4d] text-white cursor-pointer px-4 py-1 border-2 border-black retro-font text-xs hover:bg-red-500"
                                         >
                                             FIGHT
                                         </button>
@@ -367,10 +370,10 @@ export default function Home() {
                                 const res = await createRoom((session.user as any)?.username || "Player", false);
                                 if (res.success && res.roomId) {
                                     setRoomId(res.roomId);
-                                    handleJoinSpecificRoom(res.roomId);
+                                    handleJoinSpecificRoom(res.roomId, true);
                                 }
                             }}
-                            className="w-full bg-[#fcee09] border-4 border-black p-3 retro-font text-black hover:bg-yellow-300"
+                            className="w-full bg-[#fcee09] border-4 border-black p-3 retro-font text-black hover:bg-yellow-300 cursor-pointer"
                         >
                             + CREATE PUBLIC ROOM
                         </button>

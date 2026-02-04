@@ -1,6 +1,6 @@
 "use client";
 
-import { saveBattleResult, sendBattleMove } from "../actions"; 
+import { saveBattleResult, sendBattleMove, notifyOpponentLeft } from "../actions"; 
 import { useEffect, useState, useRef } from "react";
 import { playSound } from "../lib/sounds";
 import { Character } from "../lib/github";
@@ -132,14 +132,30 @@ export default function BattleView({ player, opponent, onReset, gameMode = "pve"
                 winner: winner,
             };
           });
-      };      
+      };
+      
+      // Handle Opponent left
+      const handlePlayerLeft = (data: { username: string }) => {
+        if (data.username !== player.username) {
+          setBattleState((prev) => {
+            if (!prev) return null;
+            return {
+              ...prev,
+              winner: "player",  // win by default
+              logs: [`${data.username} fledthe battle!`, ...prev.logs]
+            };
+          });
+        }
+      };
           
       // Bind listener
       channel.bind("battle-move", handleMove);
+      channel.bind("player-left", handlePlayerLeft);
 
       // Unbind everything
       return () => {
         channel.unbind("battle-move", handleMove);
+        channel.unbind("player-left", handlePlayerLeft);
         pusherClient.unsubscribe(roomId);
       };
     }
@@ -383,7 +399,7 @@ export default function BattleView({ player, opponent, onReset, gameMode = "pve"
           onClick={() => handleAction("special")}
           disabled={!battleState.isPlayerTurn || !!battleState.winner || battleState.playerSpecialCd > 0}
           className={`retro-font text-white text-lg md:text-xl px-8 py-4 border-4 border-black pixel-shadow transition-all flex items-center gap-2
-            ${battleState.playerSpecialCd > 0 
+            ${(!battleState.isPlayerTurn || battleState.playerSpecialCd > 0) 
               ? "bg-gray-500 cursor-not-allowed opacity-70"
               : "bg-[#845ec2] hover:-translate-y-1 hover:shadow-[6px_6px_0px_#000] hover:bg-purple-700 active:translate-y-1 active:shadow-none" 
             }`}
@@ -402,7 +418,7 @@ export default function BattleView({ player, opponent, onReset, gameMode = "pve"
           onClick={() => handleAction("heal")}
           disabled={!battleState.isPlayerTurn || !!battleState.winner || battleState.playerHealCd > 0 || battleState.playerHealsUsed >= 3}
           className={`retro-font text-white text-lg md:text-xl px-8 py-4 border-4 border-black pixel-shadow transition-all flex items-center gap-2
-            ${(battleState.playerHealCd > 0 || battleState.playerHealsUsed >= 3)
+            ${(!battleState.isPlayerTurn || battleState.playerHealCd > 0 || battleState.playerHealsUsed >= 3)
               ? "bg-gray-500 cursor-not-allowed opacity-70" 
               : "bg-[#4ecdc4] hover:-translate-y-1 hover:shadow-[6px_6px_0px_#000] hover:bg-cyan-700 active:translate-y-1 active:shadow-none"
             }`}
@@ -441,13 +457,18 @@ export default function BattleView({ player, opponent, onReset, gameMode = "pve"
             <div className="flex gap-4 justify-center">
               <button
                 onClick={() => setShowExitConfirm(false)}
-                className="retro-font px-6 py-3 bg-gray-200 border-4 border-black hover-bg-gray-300 text-black text-sm transition-colors"
+                className="retro-font px-6 py-3 cursor-pointer bg-gray-200 border-4 border-black hover-bg-gray-300 text-black text-sm transition-colors"
               >
                 NO, FIGHT!
               </button>
               <button
-                onClick={onReset}
-                className="retro-font px-6 py-3 bg-[#ff6b6b] border-4 border-black hover-bg-red-600 text-white text-sm transition-colors"
+                onClick={async () => {
+                  if (gameMode === "pvp" && roomId) {
+                    await notifyOpponentLeft(roomId, player.username);
+                  }
+                  onReset();
+                }}
+                className="retro-font px-6 py-3 bg-[#ff6b6b] border-4 border-black hover-bg-red-600 text-white text-sm transition-colors cursor-pointer"
               >
                 YES, QUIT
               </button>

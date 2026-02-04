@@ -168,3 +168,15 @@ export async function joinRoomDB(roomId: string, guestUsername: string) {
         return { success: false };
     }
 }
+
+export async function notifyOpponentLeft(roomId: string, username: string) {
+    try {
+        await pusherServer.trigger(roomId, "player-left", {
+            username: username
+        });
+        return { success: true };
+    } catch (error) {
+        console.error("Error notifying left:", error);
+        return { success: false };
+    }
+}
