@@ -199,3 +199,13 @@ export async function checkRoomStatus(roomId: string) {
         return { success: false, message: "SERVER ERROR" };
     }
 }
+
+export async function notifyPlayerReady(roomId: string, username: string) {
+    try {
+        await pusherServer.trigger(roomId, "player-ready", { username });
+        return { success: true };
+    } catch (error) {
+        console.error("Error notifying ready:", error);
+        return { success: false };
+    }
+}

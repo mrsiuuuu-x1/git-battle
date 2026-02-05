@@ -2,14 +2,16 @@
 
 import { useState, useEffect } from "react";
 import { useSession, signIn, signOut } from "next-auth/react";
-import { getLeaderboard, createRoom, getPublicRooms, joinRoomDB, joinMultiplayerRoom, checkRoomStatus } from "./actions";
+import { useRouter } from "next/navigation"; // 👈 IMPORT THIS
+import { getLeaderboard, createRoom, getPublicRooms, joinRoomDB, checkRoomStatus } from "./actions";
 import BattleView from "./components/BattleView";
-import { pusherClient } from "./lib/pusher";
 import { getCharacterProfile, Character } from "./lib/github";
 import { PixelSword, PixelShield } from "./components/PixelIcons";
 
 export default function Home() {
   const { data: session, status } = useSession();
+  const router = useRouter(); // 👈 INITIALIZE ROUTER
+
   const [isPlaying, setIsPlaying] = useState(false);
   const [loadingGame, setLoadingGame] = useState(false);
   const [menuStep, setMenuStep] = useState<"menu" | "difficulty" | "leaderboard" | "multiplayer">("menu");
@@ -18,7 +20,7 @@ export default function Home() {
   const [opponentData, setOpponentData] = useState<Character | null>(null);
   const [roomId, setRoomId] = useState("");
   const [isWaiting, setIsWaiting] = useState(false);
-  const [gameMode, setGameMode] = useState<"pve" | "pvp">("pve");
+  
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -45,7 +47,7 @@ export default function Home() {
 
       interval = setInterval(() => {
         refreshLobby();
-      }, 22000);
+      }, 5000); 
     }
 
     return () => {
@@ -55,7 +57,6 @@ export default function Home() {
 
   // START GAME (PVE MODE)
   const handleStartGame = async () => {
-    setGameMode("pve");
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const username = (session?.user as any)?.username || session?.user?.name;
     
@@ -109,7 +110,7 @@ export default function Home() {
     );
   }
 
-  // BATTLE VIEW
+  // BATTLE VIEW (PVE ONLY NOW)
   if (isPlaying && playerData && opponentData) {
     return (
       <BattleView 
@@ -120,17 +121,15 @@ export default function Home() {
             setMenuStep("menu");
             setRoomId("");
             setIsWaiting(false);
-            pusherClient.unsubscribe(roomId);
         }} 
-        gameMode={gameMode}
-        roomId={roomId}
+        gameMode="pve" // Forcing PVE here because PVP now happens in /lobby/[id]
+        roomId=""
       />
     );
   }
 
-  // JOIN PRIVATE OR PUBLIC ROOM LOGIC
+  // 🔥 UPDATED: JOIN ROOM LOGIC (Redirects to Lobby Page) 🔥
   const handleJoinSpecificRoom = async (targetRoomId: string, isHost: boolean) => {
-    setGameMode("pvp");
     if (!targetRoomId) return alert("Please enter a Room ID!");
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -140,37 +139,19 @@ export default function Home() {
     setIsWaiting(true);
 
     if (!isHost) {
+      // 1. Check if room is valid
       const check = await checkRoomStatus(targetRoomId);
       if (!check.success) {
         setIsWaiting(false);
         setErrorMsg(check.message || "INVALID ROOM");
         return;
       }
+      // 2. Add player to DB
       await joinRoomDB(targetRoomId, username);
     }
 
-    // Fetch own data
-    const myProfile = await getCharacterProfile(username);
-    setPlayerData(myProfile);
-    
-    const channel = pusherClient.subscribe(targetRoomId);
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    channel.bind("user-joined", async (incomingPlayer: any) => {
-      if (incomingPlayer.username !== username) {
-        setOpponentData(incomingPlayer);
-        setIsPlaying(true);
-        if (isHost) {
-          await joinMultiplayerRoom(targetRoomId, myProfile);
-        }
-      }
-    });
-
-    if (!isHost) {
-      setTimeout(async () => {
-        await joinMultiplayerRoom(targetRoomId, myProfile);
-      }, 500);
-    }
+    // 3. 🚀 REDIRECT TO THE NEW LOBBY PAGE 🚀
+    router.push(`/lobby/${targetRoomId}`);
   };
 
   return (
@@ -206,7 +187,7 @@ export default function Home() {
             {/* SCREEN 1: MAIN MENU */}
             {menuStep === "menu" && (
                 <div className="w-full max-w-md flex flex-col gap-4 animate-in slide-in-from-right duration-300">
-                     <button 
+                      <button 
                         onClick={() => setMenuStep("difficulty")}
                         className="w-full bg-[#ff6b6b] border-4 border-black cursor-pointer text-white retro-font py-4 text-xl hover:bg-red-600 hover:-translate-y-1 hover:shadow-[4px_4px_0_#000] transition-all flex justify-center items-center gap-2"
                         >
@@ -331,9 +312,8 @@ export default function Home() {
                                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                 const res = await createRoom((session.user as any)?.username || "Player", true);
                                 if(res.success && res.roomId) {
-                                    setRoomId(res.roomId);
-                                    // Auto-join logic
-                                    handleJoinSpecificRoom(res.roomId, true);
+                                    // 🚀 REDIRECT TO LOBBY
+                                    router.push(`/lobby/${res.roomId}`);
                                 }
                             }}
                             className="flex-1 bg-[#845ec2] cursor-pointer border-4 border-black p-3 retro-font text-white hover:bg-purple-500"
@@ -367,7 +347,7 @@ export default function Home() {
                                         </div>
                                         <button 
                                             onClick={async () => {
-                                                setRoomId(room.id);
+                                                // 🚀 REDIRECT TO LOBBY
                                                 handleJoinSpecificRoom(room.id, false);
                                             }}
                                             className="bg-[#ff4d4d] text-white cursor-pointer px-4 py-1 border-2 border-black retro-font text-xs hover:bg-red-500"
@@ -384,8 +364,8 @@ export default function Home() {
                                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                 const res = await createRoom((session.user as any)?.username || "Player", false);
                                 if (res.success && res.roomId) {
-                                    setRoomId(res.roomId);
-                                    handleJoinSpecificRoom(res.roomId, true);
+                                    // 🚀 REDIRECT TO LOBBY
+                                    router.push(`/lobby/${res.roomId}`);
                                 }
                             }}
                             className="w-full bg-[#fcee09] border-4 border-black p-3 retro-font text-black hover:bg-yellow-300 cursor-pointer"
@@ -432,11 +412,10 @@ export default function Home() {
         )}
       </div>
 
-      {/* ERROR MODAL (NOT IN ROOM) */}
+      {/* ERROR MODAL */}
       {errorMsg && (
         <div className="absolute inset-0 bg-black/80 flex items-center justify-center z-50 animate-in fade-in duration-200">
           <div className="bg-white border-4 border-black p-8 text-center pixel-shadow max-w-sm mx-4 relative">
-            {/* RED HEADER */}
             <div className="absolute top-0 left-0 right-0 h-4 bg-[#ff6b6b] border-b-4 border-black"></div>
             <h3 className="retro-font text-xl mb-4 text-[#ff6b6b] mt-4">ERROR</h3>
             <p className="retro-font text-sm mb-8 text-black leading-relaxed">
