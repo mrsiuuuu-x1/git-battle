@@ -209,3 +209,14 @@ export async function notifyPlayerReady(roomId: string, username: string) {
         return { success: false };
     }
 }
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function notifyHostReply(roomId: string, hostProfile: any) {
+    try {
+        await pusherServer.trigger(roomId, "host-reply", hostProfile);
+        return { success: true };
+    } catch (error) {
+        console.error("error sending host reply:", error);
+        return { success: false };
+    }
+}
