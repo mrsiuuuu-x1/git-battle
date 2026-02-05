@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Character } from "../lib/github";
 import { pusherClient } from "../lib/pusher";
-import { notifyPlayerReady, joinMultiplayerRoom, notifyHostReply } from "../actions"; // 👈 Added imports
+import { notifyPlayerReady, joinMultiplayerRoom, notifyHostReply, notifyRematch } from "../actions"; // 👈 Added notifyRematch
 import UserCard from "./UserCard"; 
 import BattleView from "./BattleView";
 import { playSound } from "../lib/sounds";
@@ -22,53 +22,51 @@ export default function ActiveRoom({ player, roomId, initialOpponent }: ActiveRo
   const [isOpponentReady, setIsOpponentReady] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
   
-  // Use a ref to track if I am the host (if I was here first/have no opponent)
   const isHostRef = useRef(!initialOpponent);
 
   // 1. Handshake & Room Events
   useEffect(() => {
     if (!roomId) return;
 
-    // 🔥 ANNOUNCE PRESENCE ON ENTRY
-    // This tells the Host (if they are there) that we have arrived
     joinMultiplayerRoom(roomId, player);
 
     const channel = pusherClient.subscribe(roomId);
 
-    // Event: Someone Joined (Joiner -> Host)
+    // Opponent Joined
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     channel.bind("user-joined", async (incomingPlayer: any) => {
-      // Ignore my own join event
       if (incomingPlayer.username === player.username) return;
-
-      console.log("Opponent joined:", incomingPlayer.username);
       setOpponent(incomingPlayer);
       //playSound("beep"); 
 
-      // 🔥 IF I AM HOST, I MUST REPLY!
-      // The Joiner doesn't know who I am yet. I must send my data back.
       if (isHostRef.current) {
-          console.log("I am Host, sending welcome to:", incomingPlayer.username);
           await notifyHostReply(roomId, player);
       }
     });
 
-    // Event: Host Replied (Host -> Joiner)
+    // Host Replied
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     channel.bind("host-reply", (hostProfile: any) => {
         if (hostProfile.username === player.username) return;
-        
-        console.log("Received Host Data:", hostProfile.username);
         setOpponent(hostProfile);
-        isHostRef.current = false; // I am definitely not the host if I received this
+        isHostRef.current = false; 
     });
 
-    // Event: Fight Check
+    // Ready Check
     channel.bind("player-ready", (data: { username: string }) => {
       if (data.username !== player.username) {
         setIsOpponentReady(true);
         //playSound("beep");
       }
+    });
+
+    // 🔥 NEW: REMATCH EVENT 🔥
+    // When received, reset everyone to the lobby state
+    channel.bind("rematch", () => {
+        setGameStarted(false);     // Hide Battle
+        setAmIReady(false);        // Uncheck Ready
+        setIsOpponentReady(false); // Uncheck Opponent
+        //playSound("beep");
     });
 
     return () => {
@@ -92,6 +90,12 @@ export default function ActiveRoom({ player, roomId, initialOpponent }: ActiveRo
     await notifyPlayerReady(roomId, player.username);
   };
 
+  // 🔥 NEW: Handle Play Again Click
+  const handleRematchClick = async () => {
+      // Instead of reloading, we tell the server to reset the room
+      await notifyRematch(roomId);
+  };
+
   if (gameStarted && opponent) {
     return (
       <BattleView 
@@ -99,7 +103,7 @@ export default function ActiveRoom({ player, roomId, initialOpponent }: ActiveRo
         opponent={opponent} 
         roomId={roomId}
         gameMode="pvp"
-        onReset={() => window.location.reload()} 
+        onReset={handleRematchClick} // 👈 Pass the new Rematch function here
       />
     );
   }
@@ -187,7 +191,7 @@ export default function ActiveRoom({ player, roomId, initialOpponent }: ActiveRo
                         : "bg-[#ffd700] text-black hover:-translate-y-2 hover:shadow-[12px_12px_0px_#000] hover:bg-yellow-300"
                     }`}
             >
-                {amIReady ? "WAITING FOR OPPONENT..." : "FIGHT!"}
+                {amIReady ? "WAITING FOR OPPONENT..." : "⚔️ FIGHT!"}
             </button>
         )}
       </div>
