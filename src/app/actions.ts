@@ -220,3 +220,12 @@ export async function notifyHostReply(roomId: string, hostProfile: any) {
         return { success: false };
     }
 }
+
+export async function notifyRematch(roomId: string) {
+    try {
+        await pusherServer.trigger(roomId, "rematch", {});
+        return { success: true };
+    } catch (error) {
+        console.error("Error sending rematch:", error);
+    }
+}
