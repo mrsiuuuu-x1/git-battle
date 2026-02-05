@@ -2,15 +2,15 @@
 
 import { useState, useEffect } from "react";
 import { useSession, signIn, signOut } from "next-auth/react";
-import { useRouter } from "next/navigation"; // 👈 IMPORT THIS
-import { getLeaderboard, createRoom, getPublicRooms, joinRoomDB, checkRoomStatus } from "./actions";
+import { useRouter } from "next/navigation"; 
+import { getLeaderboard, createRoom, getPublicRooms } from "./actions"; // Removed joinRoomDB import
 import BattleView from "./components/BattleView";
 import { getCharacterProfile, Character } from "./lib/github";
 import { PixelSword, PixelShield } from "./components/PixelIcons";
 
 export default function Home() {
   const { data: session, status } = useSession();
-  const router = useRouter(); // 👈 INITIALIZE ROUTER
+  const router = useRouter(); 
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [loadingGame, setLoadingGame] = useState(false);
@@ -33,56 +33,36 @@ export default function Home() {
     setMenuStep("leaderboard");
   };
 
-  // Function to refresh the lobby list
   const refreshLobby = async () => {
     const { rooms } = await getPublicRooms();
     setPublicRooms(rooms || []);
   };
 
-  // Load rooms when entering multiplayer menu
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (menuStep === "multiplayer") {
       refreshLobby();
-
-      interval = setInterval(() => {
-        refreshLobby();
-      }, 5000); 
+      interval = setInterval(() => { refreshLobby(); }, 5000); 
     }
-
-    return () => {
-      if (interval) clearInterval(interval);
-    };
+    return () => { if (interval) clearInterval(interval); };
   }, [menuStep]);
 
-  // START GAME (PVE MODE)
   const handleStartGame = async () => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const username = (session?.user as any)?.username || session?.user?.name;
-    
-    if (!username) {
-      alert("Error: Could not find your username. Try logging out and back in.");
-      return;
-    }
+    if (!username) return alert("Error: Could not find your username.");
 
     setLoadingGame(true);
 
     try {
-      // Fetch Player Data
       const player = await getCharacterProfile(username);
-      
-      // Pick Bot based on difficulty
       let botName = "octocat"; 
       if (difficulty === "easy") botName = "defunkt"; 
       if (difficulty === "hard") botName = "torvalds"; 
-
       const opponent = await getCharacterProfile(botName); 
 
-      if (!player || !opponent) {
-        throw new Error("Failed to fetch character data");
-      }
+      if (!player || !opponent) throw new Error("Failed to fetch data");
 
-      // Apply difficulty balance
       let hpMultiplier = 1.0;
       if (difficulty === "easy") hpMultiplier = 0.8;
       if (difficulty === "medium") hpMultiplier = 1.0;
@@ -96,7 +76,7 @@ export default function Home() {
       setIsPlaying(true);
     } catch (error) {
       console.error("Failed to load battle data", error);
-      alert("Could not load GitHub data. API limit reached?");
+      alert("Could not load GitHub data.");
     } finally {
       setLoadingGame(false);
     }
@@ -110,7 +90,6 @@ export default function Home() {
     );
   }
 
-  // BATTLE VIEW (PVE ONLY NOW)
   if (isPlaying && playerData && opponentData) {
     return (
       <BattleView 
@@ -122,13 +101,13 @@ export default function Home() {
             setRoomId("");
             setIsWaiting(false);
         }} 
-        gameMode="pve" // Forcing PVE here because PVP now happens in /lobby/[id]
+        gameMode="pve" 
         roomId=""
       />
     );
   }
 
-  // 🔥 UPDATED: JOIN ROOM LOGIC (Redirects to Lobby Page) 🔥
+  // 🔥 UPDATED: JOIN LOGIC (SKIP DB CHECK) 🔥
   const handleJoinSpecificRoom = async (targetRoomId: string, isHost: boolean) => {
     if (!targetRoomId) return alert("Please enter a Room ID!");
 
@@ -138,26 +117,15 @@ export default function Home() {
 
     setIsWaiting(true);
 
-    if (!isHost) {
-      // 1. Check if room is valid
-      const check = await checkRoomStatus(targetRoomId);
-      if (!check.success) {
-        setIsWaiting(false);
-        setErrorMsg(check.message || "INVALID ROOM");
-        return;
-      }
-      // 2. Add player to DB
-      await joinRoomDB(targetRoomId, username);
-    }
-
-    // 3. 🚀 REDIRECT TO THE NEW LOBBY PAGE 🚀
+    // 👇 WE REMOVED THE DB CHECKS HERE 👇
+    // We just trust the code and go. The Lobby Handshake will verify the connection.
+    
+    // 🚀 REDIRECT INSTANTLY 🚀
     router.push(`/lobby/${targetRoomId}`);
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#1a202c] to-[#2d3748] flex flex-col items-center justify-center p-4 relative overflow-hidden">
-      
-      {/* GRID BACKGROUND */}
       <div className="absolute inset-0 opacity-10 pointer-events-none" 
         style={{ backgroundImage: 'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)', backgroundSize: '40px 40px' }} 
       />
@@ -170,8 +138,6 @@ export default function Home() {
 
         {status === "authenticated" ? (
           <div className="flex flex-col items-center gap-6 animate-in fade-in duration-500">
-            
-            {/* USER PROFILE HEADER */}
             <div className="flex items-center gap-4 border-b-4 border-black pb-4 w-full justify-center">
               <img 
                 src={session.user?.image || ""} 
@@ -184,7 +150,6 @@ export default function Home() {
               </div>
             </div>
 
-            {/* SCREEN 1: MAIN MENU */}
             {menuStep === "menu" && (
                 <div className="w-full max-w-md flex flex-col gap-4 animate-in slide-in-from-right duration-300">
                       <button 
@@ -210,11 +175,8 @@ export default function Home() {
                 </div>
             )}
 
-            {/* SCREEN 2: DIFFICULTY */}
             {menuStep === "difficulty" && (
                 <div className="w-full max-w-md flex flex-col gap-6 animate-in slide-in-from-right duration-300">
-                    
-                    {/* TOGGLES */}
                     <div className="flex gap-2 w-full justify-center">
                         {["easy", "medium", "hard"].map((level) => (
                             <button
@@ -230,15 +192,12 @@ export default function Home() {
                             </button>
                         ))}
                     </div>
-
                     <button 
                         onClick={handleStartGame}
                         className="w-full cursor-pointer bg-[#ff6b6b] border-4 border-black text-white retro-font py-4 text-xl hover:bg-red-600 hover:-translate-y-1 hover:shadow-[4px_4px_0_#000] transition-all flex justify-center items-center gap-2"
                     >
                         <PixelSword className="w-6 h-6" /> START BATTLE
                     </button>
-
-                    {/* BACK BUTTON */}
                     <button 
                         onClick={() => setMenuStep("menu")}
                         className="text-gray-400 retro-font text-xs hover:text-white underline cursor-pointer"
@@ -248,11 +207,9 @@ export default function Home() {
                 </div>
             )}
 
-            {/* SCREEN 3: LEADERBOARD */}
             {menuStep === "leaderboard" && (
               <div className="w-full max-w-md flex flex-col gap-4 animate-in slide-in-from-right duration-300">
                 <h2 className="retro-font text-xl text-center text-[#ffd700] mb-2">HALL OF FAME</h2>
-
                 <div className="bg-black/40 border-4 border-black p-4 max-h-60 overflow-y-auto">
                 {leaderboard.length === 0 ? (
                   <p className="text-white retro-font text-center">NO LEGENDS YET...</p>
@@ -272,7 +229,6 @@ export default function Home() {
                   ))
                 )}
               </div>
-
               <button
                 onClick={() => setMenuStep("menu")}
                 className="text-gray-400 retro-font text-xs hover:text-white underline mt-2 text-center cursor-pointer"
@@ -282,11 +238,8 @@ export default function Home() {
             </div>
             )}
 
-            {/* SCREEN 4: MULTIPLAYER LOBBY */}
             {menuStep === "multiplayer" && (
                 <div className="flex flex-col md:flex-row gap-6 w-full animate-in zoom-in">
-                    
-                    {/* LEFT: PRIVATE ROOMS */}
                     <div className="flex-1 bg-black/40 border-4 border-black p-6 flex flex-col gap-4">
                         <h3 className="retro-font text-[#fcee09] text-xl text-center">🔒 PRIVATE</h3>
                         <p className="retro-font text-xs text-gray-300 text-center">Share a code with a friend.</p>
@@ -312,7 +265,6 @@ export default function Home() {
                                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                 const res = await createRoom((session.user as any)?.username || "Player", true);
                                 if(res.success && res.roomId) {
-                                    // 🚀 REDIRECT TO LOBBY
                                     router.push(`/lobby/${res.roomId}`);
                                 }
                             }}
@@ -323,7 +275,6 @@ export default function Home() {
                         </div>
                     </div>
 
-                    {/* RIGHT: PUBLIC LOBBY */}
                     <div className="flex-1 bg-black/40 border-4 border-black p-6 flex flex-col gap-4 h-[400px]">
                         <div className="flex justify-between items-center border-b-4 border-white pb-2">
                             <h3 className="retro-font text-[#ff4d4d] text-xl">🌍 PUBLIC</h3>
@@ -331,8 +282,6 @@ export default function Home() {
                                 🔄 REFRESH
                             </button>
                         </div>
-
-                        {/* ROOM LIST */}
                         <div className="flex-1 overflow-y-auto flex flex-col gap-2 pr-2">
                             {publicRooms.length === 0 ? (
                                 <div className="text-center text-gray-400 retro-font text-xs mt-10">
@@ -347,7 +296,6 @@ export default function Home() {
                                         </div>
                                         <button 
                                             onClick={async () => {
-                                                // 🚀 REDIRECT TO LOBBY
                                                 handleJoinSpecificRoom(room.id, false);
                                             }}
                                             className="bg-[#ff4d4d] text-white cursor-pointer px-4 py-1 border-2 border-black retro-font text-xs hover:bg-red-500"
@@ -358,13 +306,11 @@ export default function Home() {
                                 ))
                             )}
                         </div>
-
                         <button 
                             onClick={async () => {
                                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                 const res = await createRoom((session.user as any)?.username || "Player", false);
                                 if (res.success && res.roomId) {
-                                    // 🚀 REDIRECT TO LOBBY
                                     router.push(`/lobby/${res.roomId}`);
                                 }
                             }}
@@ -373,11 +319,9 @@ export default function Home() {
                             + CREATE PUBLIC ROOM
                         </button>
                     </div>
-
                 </div>
             )}
 
-            {/* MULTIPLAYER BACK BUTTON */}
             {menuStep === "multiplayer" && (
                 <button
                     onClick={() => setMenuStep("menu")}
@@ -387,7 +331,6 @@ export default function Home() {
                 </button>
             )}
 
-            {/* LOGOUT BUTTON */}
             <button 
               onClick={() => signOut()}
               className="text-gray-400 retro-font text-xs hover:text-white mt-4 underline cursor-pointer"
@@ -396,7 +339,6 @@ export default function Home() {
             </button>
           </div>
         ) : (
-          // LOGGED OUT VIEW
           <div className="flex flex-col items-center gap-6">
             <p className="retro-font text-white text-sm md:text-base leading-loose mb-4">
               CONNECT YOUR GITHUB TO ENTER THE ARENA. <br/>
@@ -412,7 +354,6 @@ export default function Home() {
         )}
       </div>
 
-      {/* ERROR MODAL */}
       {errorMsg && (
         <div className="absolute inset-0 bg-black/80 flex items-center justify-center z-50 animate-in fade-in duration-200">
           <div className="bg-white border-4 border-black p-8 text-center pixel-shadow max-w-sm mx-4 relative">
