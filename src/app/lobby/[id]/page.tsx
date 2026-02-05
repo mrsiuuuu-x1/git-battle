@@ -1,13 +1,12 @@
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/lib/auth"; 
+import { authOptions } from "@/app/lib/auth";
 import { redirect } from "next/navigation";
 import { getCharacterProfile } from "@/app/lib/github";
 import ActiveRoom from "../../components/ActiveRoom"; 
 
+// 🔥 UPDATED: Params is now a Promise in Next.js 15
 interface PageProps {
-  params: {
-    id: string;
-  };
+  params: Promise<{ id: string }>;
 }
 
 export default async function LobbyPage({ params }: PageProps) {
@@ -18,7 +17,10 @@ export default async function LobbyPage({ params }: PageProps) {
     redirect("/");
   }
 
-  const roomId = params.id;
+  // 🔥 FIX: Await the params to get the ID correctly
+  const resolvedParams = await params;
+  const roomId = resolvedParams.id;
+  
   const username = session.user.name;
 
   // 2. Fetch MY stats
@@ -29,25 +31,17 @@ export default async function LobbyPage({ params }: PageProps) {
       myCharacter = await getCharacterProfile(username);
   } catch (e) {
       console.error("Failed to fetch character:", e);
-      // Don't redirect yet, we will use a fallback
   }
 
-  // 🔥 FALLBACK FIX: If GitHub API fails, use a default "Guest" profile
-  // This prevents the app from crashing!
+  // Fallback Profile (Guest Mode)
   if (!myCharacter) {
       console.log(`⚠️ Using Fallback Profile for ${username}`);
       myCharacter = {
           username: username,
-          // Use your GitHub avatar if we have it from the session, otherwise a default
           avatar: session.user.image || "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png",
-          class: "Frontend Warrior", // Default class
+          class: "Frontend Warrior",
           level: 1,
-          stats: {
-              hp: 100,
-              attack: 15,
-              defense: 5,
-              speed: 10
-          }
+          stats: { hp: 100, attack: 15, defense: 5, speed: 10 }
       };
   }
 
