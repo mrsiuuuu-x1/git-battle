@@ -13,11 +13,12 @@ interface BattleViewProps {
   player: Character;
   opponent: Character;
   onReset: () => void;
+  onMainMenu?: () => void; // 👈 New optional prop
   gameMode?: "pve" | "pvp";
   roomId?: string;
 }
 
-export default function BattleView({ player, opponent, onReset, gameMode = "pve", roomId }: BattleViewProps) {
+export default function BattleView({ player, opponent, onReset, onMainMenu, gameMode = "pve", roomId }: BattleViewProps) {
   const [battleState, setBattleState] = useState<BattleState | null>(null);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
 
@@ -25,11 +26,8 @@ export default function BattleView({ player, opponent, onReset, gameMode = "pve"
   const [damageNumbers, setDamageNumbers] = useState<Array<{id:number,value:string,x:number,y:number,color?:string}>>([]);
   const nextId = useRef(0);
   const scrollRef = useRef<HTMLDivElement>(null);
-  
-  // (bug fix) MEMORY REF: Remembers the last move to prevent duplicates
   const lastMoveId = useRef<number>(0);
 
-  // Animation States
   const [p1Anim, setP1Anim] = useState("");
   const [p2Anim, setP2Anim] = useState("");
 
@@ -79,19 +77,10 @@ export default function BattleView({ player, opponent, onReset, gameMode = "pve"
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const handleMove = (data: any) => {
-        // SAFETY CHECK: Ignore my own moves
         if (data.attacker === player.username) return;
-
-        // SAFETY CHECK: Ignore Duplicate Moves 
-        if (data.moveId && data.moveId === lastMoveId.current) {
-            console.log("Blocked duplicate move:", data.moveId);
-            return;
-        }
+        if (data.moveId && data.moveId === lastMoveId.current) return;
         
-        // Remember this move ID
         if (data.moveId) lastMoveId.current = data.moveId;
-
-        console.log("Processing move:", data);
 
         setBattleState((prev) => {
           if (!prev) return null;
@@ -102,15 +91,13 @@ export default function BattleView({ player, opponent, onReset, gameMode = "pve"
           if (newHealCd > 0) newHealCd -= 1;
           if (newSpecialCd > 0) newSpecialCd -= 1;
 
-          // Calculate new health
           const newPlayerHp = Math.max(0, prev.playerHp - (data.damage || 0));
           const newOpponentHp = Math.min(prev.opponentMaxHp, prev.opponentHp + (data.heal || 0));
 
-          // Trigger Visuals
           if ((data.damage || 0) > 0) {
               spawnNumber(`-${data.damage}`, "player", "damage");
               playSound("damage");
-              setP1Anim("damaged"); // I flinch
+              setP1Anim("damaged");
               setTimeout(() => setP1Anim(""), 600);
           }
 
@@ -118,7 +105,7 @@ export default function BattleView({ player, opponent, onReset, gameMode = "pve"
               spawnNumber(`+${data.heal}`, "opponent", "heal");
               playSound("heal");
           }
-          // Check for Game Over
+          
           const winner = newPlayerHp <= 0 ? "opponent" : null;
 
           return {
@@ -128,31 +115,28 @@ export default function BattleView({ player, opponent, onReset, gameMode = "pve"
                 playerHealCd: newHealCd,
                 playerSpecialCd: newSpecialCd,
                 logs: [data.logMessage, ...prev.logs],
-                isPlayerTurn: true, // It is now MY turn!
+                isPlayerTurn: true, 
                 winner: winner,
             };
           });
       };
       
-      // Handle Opponent left
       const handlePlayerLeft = (data: { username: string }) => {
         if (data.username !== player.username) {
           setBattleState((prev) => {
             if (!prev) return null;
             return {
               ...prev,
-              winner: "player",  // win by default
-              logs: [`${data.username} fledthe battle!`, ...prev.logs]
+              winner: "player",  
+              logs: [`${data.username} fled the battle!`, ...prev.logs]
             };
           });
         }
       };
           
-      // Bind listener
       channel.bind("battle-move", handleMove);
       channel.bind("player-left", handlePlayerLeft);
 
-      // Unbind everything
       return () => {
         channel.unbind("battle-move", handleMove);
         channel.unbind("player-left", handlePlayerLeft);
@@ -164,7 +148,6 @@ export default function BattleView({ player, opponent, onReset, gameMode = "pve"
 
   // Handle Enemy Turn (Auto - PVE ONLY)
   useEffect(() => {
-    // Checking if multiplayer/ai
     if (gameMode === "pvp") return;
 
     if (battleState && !battleState.winner && !battleState.isPlayerTurn) {
@@ -172,7 +155,6 @@ export default function BattleView({ player, opponent, onReset, gameMode = "pve"
         setBattleState((prev) => {
           if (!prev) return null;
           const newState = performOpponentTurn(prev, player, opponent);
-          // Detect damage/heal
           const dmgTaken = prev.playerHp - newState.playerHp;
           const healed = newState.opponentHp - prev.opponentHp;
           if (dmgTaken > 0) {
@@ -183,7 +165,6 @@ export default function BattleView({ player, opponent, onReset, gameMode = "pve"
             spawnNumber(`+${healed}`,"opponent","heal");
             playSound("heal");
           }
-          // Trigger Animations
           setP2Anim("attacking"); 
           setTimeout(() => setP1Anim("damaged"), 250); 
           setTimeout(() => { setP2Anim(""); setP1Anim(""); }, 600);
@@ -194,7 +175,6 @@ export default function BattleView({ player, opponent, onReset, gameMode = "pve"
     }
   }, [battleState, player, opponent, gameMode]);
 
-  // Auto-scroll logs
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -203,9 +183,7 @@ export default function BattleView({ player, opponent, onReset, gameMode = "pve"
 
   if (!battleState) return <div className="text-white text-center p-10 font-mono">LOADING BATTLE...</div>;
 
-  // Handle Action
   const handleAction = async (action: "attack" | "heal" | "special") => {
-    // Play Sounds & Animations
     if (action === "attack") playSound("attack");
     if (action === "heal") playSound("heal");
     if (action === "special") playSound("attack");
@@ -219,17 +197,14 @@ export default function BattleView({ player, opponent, onReset, gameMode = "pve"
     if (!battleState) return;
     const newState = performPlayerTurn(battleState, player, opponent, action);
     
-    // Detect changes
     const dmgDealt = battleState.opponentHp - newState.opponentHp;
     const healed = newState.playerHp - battleState.playerHp;
     
-    // Update UI visuals 
     if (dmgDealt > 0) spawnNumber(`-${dmgDealt}`,"opponent","damage");
     if (healed > 0) spawnNumber(`+${healed}`,"player","heal");
 
     setBattleState(newState);
 
-    // Send Network Request
     if (gameMode === "pvp" && roomId) {
         try {
             await sendBattleMove(roomId, {
@@ -264,6 +239,7 @@ export default function BattleView({ player, opponent, onReset, gameMode = "pve"
           />
         ))}
       </div>
+      
       {/* EXIT BUTTON */}
       <button
         onClick={() => setShowExitConfirm(true)}
@@ -384,8 +360,6 @@ export default function BattleView({ player, opponent, onReset, gameMode = "pve"
 
       {/* CONTROLS */}
       <div className="mt-8 flex flex-wrap justify-center gap-4 w-full max-w-2xl">
-        
-        {/* BASIC ATTACK */}
         <button
           onClick={() => handleAction("attack")}
           disabled={!battleState.isPlayerTurn || !!battleState.winner}
@@ -394,7 +368,6 @@ export default function BattleView({ player, opponent, onReset, gameMode = "pve"
           <PixelSword className="w-6 h-6" /> ATTACK
         </button>
 
-        {/* SPECIAL ABILITY */}
         <button
           onClick={() => handleAction("special")}
           disabled={!battleState.isPlayerTurn || !!battleState.winner || battleState.playerSpecialCd > 0}
@@ -413,7 +386,6 @@ export default function BattleView({ player, opponent, onReset, gameMode = "pve"
           {battleState.playerSpecialCd > 0 && ` (${battleState.playerSpecialCd})`}
         </button>
 
-        {/* HEAL */}
         <button
           onClick={() => handleAction("heal")}
           disabled={!battleState.isPlayerTurn || !!battleState.winner || battleState.playerHealCd > 0 || battleState.playerHealsUsed >= 3}
@@ -436,7 +408,6 @@ export default function BattleView({ player, opponent, onReset, gameMode = "pve"
                 {gameMode === "pvp" ? "WAITING FOR OPPONENT..." : "OPPONENT IS THINKING..."}
              </p>
              
-             {/* Escape Hatch if opponent disconnects */}
              {gameMode === "pvp" && (
                  <button 
                     onClick={() => setShowExitConfirm(true)}
@@ -490,13 +461,25 @@ export default function BattleView({ player, opponent, onReset, gameMode = "pve"
             <p className="text-xl mb-8 retro-font">
               {battleState.winner === "player" ? "You defeated the enemy!" : "You were defeated..."}
             </p>
+            
+            <div className="flex flex-col gap-4">
+                <button 
+                  onClick={onReset}
+                  className="bg-white text-black border-4 border-black px-8 py-4 text-xl hover:bg-gray-200 pixel-shadow retro-font cursor-pointer"
+                >
+                  PLAY AGAIN
+                </button>
 
-            <button 
-              onClick={onReset}
-              className="bg-white text-black border-4 border-black px-8 py-4 text-xl hover:bg-gray-200 pixel-shadow retro-font"
-            >
-              PLAY AGAIN
-            </button>
+                {/* 🔥 NEW MAIN MENU BUTTON 🔥 */}
+                {onMainMenu && (
+                    <button 
+                      onClick={onMainMenu}
+                      className="bg-black text-white border-4 border-white px-8 py-2 text-sm hover:bg-gray-800 pixel-shadow retro-font cursor-pointer"
+                    >
+                      EXIT TO MENU
+                    </button>
+                )}
+            </div>
           </div>
         </div>
       )}

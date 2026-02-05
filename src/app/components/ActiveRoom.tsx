@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Character } from "../lib/github";
 import { pusherClient } from "../lib/pusher";
-import { notifyPlayerReady, joinMultiplayerRoom, notifyHostReply, notifyRematch } from "../actions"; // 👈 Added notifyRematch
+import { notifyPlayerReady, joinMultiplayerRoom, notifyHostReply } from "../actions"; 
 import UserCard from "./UserCard"; 
 import BattleView from "./BattleView";
 import { playSound } from "../lib/sounds";
@@ -60,15 +60,6 @@ export default function ActiveRoom({ player, roomId, initialOpponent }: ActiveRo
       }
     });
 
-    // 🔥 NEW: REMATCH EVENT 🔥
-    // When received, reset everyone to the lobby state
-    channel.bind("rematch", () => {
-        setGameStarted(false);     // Hide Battle
-        setAmIReady(false);        // Uncheck Ready
-        setIsOpponentReady(false); // Uncheck Opponent
-        //playSound("beep");
-    });
-
     return () => {
       channel.unbind_all();
       pusherClient.unsubscribe(roomId);
@@ -90,10 +81,16 @@ export default function ActiveRoom({ player, roomId, initialOpponent }: ActiveRo
     await notifyPlayerReady(roomId, player.username);
   };
 
-  // 🔥 NEW: Handle Play Again Click
-  const handleRematchClick = async () => {
-      // Instead of reloading, we tell the server to reset the room
-      await notifyRematch(roomId);
+  // 🔥 UPDATED: Local Reset Only
+  const handlePlayAgain = () => {
+      setGameStarted(false);     // Go back to lobby locally
+      setAmIReady(false);        // Uncheck my ready status
+      setIsOpponentReady(false); // Assume opponent is not ready yet
+  };
+
+  // 🔥 NEW: Exit to Menu
+  const handleMainMenu = () => {
+      router.push("/");
   };
 
   if (gameStarted && opponent) {
@@ -103,11 +100,13 @@ export default function ActiveRoom({ player, roomId, initialOpponent }: ActiveRo
         opponent={opponent} 
         roomId={roomId}
         gameMode="pvp"
-        onReset={handleRematchClick} // 👈 Pass the new Rematch function here
+        onReset={handlePlayAgain}   // 👈 Pass local reset
+        onMainMenu={handleMainMenu} // 👈 Pass main menu handler
       />
     );
   }
 
+  // ... (Lobby UI remains exactly the same as before) ...
   return (
     <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center p-4 relative">
       
@@ -128,8 +127,6 @@ export default function ActiveRoom({ player, roomId, initialOpponent }: ActiveRo
       </div>
 
       <div className="flex flex-col md:flex-row items-center gap-10 md:gap-20">
-        
-        {/* MY CARD */}
         <div className="flex flex-col items-center gap-4">
           <div className="relative">
              {player && <UserCard character={player} />}
@@ -148,7 +145,6 @@ export default function ActiveRoom({ player, roomId, initialOpponent }: ActiveRo
             VS
         </div>
 
-        {/* OPPONENT CARD */}
         <div className="flex flex-col items-center gap-4">
           {opponent ? (
             <div className="relative">
