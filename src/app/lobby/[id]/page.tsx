@@ -29,14 +29,16 @@ export default async function LobbyPage({ params }: PageProps) {
       myCharacter = await getCharacterProfile(username);
   } catch (e) {
       console.error("Failed to fetch character:", e);
-      // Do not redirect yet, try fallback first
+      // Don't redirect yet, we will use a fallback
   }
 
-  // 🔥 FALLBACK FIX: If GitHub blocked us, create a "Guest" character so we can still play
+  // 🔥 FALLBACK FIX: If GitHub API fails, use a default "Guest" profile
+  // This prevents the app from crashing!
   if (!myCharacter) {
-      console.log(`⚠️ Using Fallback Profile for ${username} (GitHub API limit likely reached)`);
+      console.log(`⚠️ Using Fallback Profile for ${username}`);
       myCharacter = {
           username: username,
+          // Use your GitHub avatar if we have it from the session, otherwise a default
           avatar: session.user.image || "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png",
           class: "Frontend Warrior", // Default class
           level: 1,

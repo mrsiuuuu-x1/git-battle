@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation"; // 👈 Import useRouter
 import { Character } from "../lib/github";
 import { pusherClient } from "../lib/pusher";
 import { notifyPlayerReady } from "../actions";
@@ -15,12 +16,13 @@ interface ActiveRoomProps {
 }
 
 export default function ActiveRoom({ player, roomId, initialOpponent }: ActiveRoomProps) {
+  const router = useRouter(); // 👈 Initialize router
   const [opponent, setOpponent] = useState<Character | null>(initialOpponent || null);
   const [amIReady, setAmIReady] = useState(false);
   const [isOpponentReady, setIsOpponentReady] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
 
-  // Subscribe to Room Events (Join & Ready)
+  // 1. Subscribe to Room Events
   useEffect(() => {
     if (!roomId) return;
 
@@ -49,7 +51,7 @@ export default function ActiveRoom({ player, roomId, initialOpponent }: ActiveRo
     };
   }, [roomId, player.username]);
 
-  //check if both ready (start)
+  // 2. Check if BOTH are ready -> Start Game
   useEffect(() => {
     if (amIReady && isOpponentReady && opponent) {
       setTimeout(() => {
@@ -59,13 +61,13 @@ export default function ActiveRoom({ player, roomId, initialOpponent }: ActiveRo
     }
   }, [amIReady, isOpponentReady, opponent]);
 
-  //handle fight button click
+  // 3. Handle Fight Button Click
   const handleReadyClick = async () => {
     setAmIReady(true);
     await notifyPlayerReady(roomId, player.username);
   };
 
-  // battle view
+  // VIEW: BATTLE
   if (gameStarted && opponent) {
     return (
       <BattleView 
@@ -73,17 +75,23 @@ export default function ActiveRoom({ player, roomId, initialOpponent }: ActiveRo
         opponent={opponent} 
         roomId={roomId}
         gameMode="pvp"
-        onReset={() => window.location.reload()}
+        onReset={() => window.location.reload()} 
       />
     );
   }
 
-  // ------------------------------------------------
   // VIEW: LOBBY / WAITING ROOM
-  // ------------------------------------------------
   return (
-    <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center p-4">
+    <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center p-4 relative">
       
+      {/* 🔥 NEW: EXIT BUTTON 🔥 */}
+      <button 
+        onClick={() => router.push("/")}
+        className="absolute top-4 left-4 retro-font text-xs text-gray-400 hover:text-white underline z-20"
+      >
+        ← EXIT TO MENU
+      </button>
+
       {/* Title */}
       <div className="mb-10 text-center">
          <h1 className="retro-font text-3xl md:text-4xl text-white mb-2 animate-pulse">
@@ -96,10 +104,11 @@ export default function ActiveRoom({ player, roomId, initialOpponent }: ActiveRo
 
       <div className="flex flex-col md:flex-row items-center gap-10 md:gap-20">
         
-        {/* PLAYER CARD */}
+        {/* MY CARD */}
         <div className="flex flex-col items-center gap-4">
           <div className="relative">
-             <UserCard character={player} />
+             {/* Added a check for player to be safe */}
+             {player && <UserCard character={player} />}
              {amIReady && (
                 <div className="absolute inset-0 bg-black/50 flex items-center justify-center border-4 border-[#4ecdc4]">
                     <span className="retro-font text-[#4ecdc4] text-xl bg-black px-4 py-2 rotate-12 border-2 border-[#4ecdc4]">
