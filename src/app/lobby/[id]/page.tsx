@@ -1,5 +1,5 @@
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/app/lib/auth";
+import { authOptions } from "@/app/lib/auth"; 
 import { redirect } from "next/navigation";
 import { getCharacterProfile } from "@/app/lib/github";
 import ActiveRoom from "../../components/ActiveRoom"; 
@@ -29,14 +29,24 @@ export default async function LobbyPage({ params }: PageProps) {
       myCharacter = await getCharacterProfile(username);
   } catch (e) {
       console.error("Failed to fetch character:", e);
-      // Don't crash, just go home
-      redirect("/"); 
+      // Do not redirect yet, try fallback first
   }
 
+  // 🔥 FALLBACK FIX: If GitHub blocked us, create a "Guest" character so we can still play
   if (!myCharacter) {
-      console.error("Character not found for username:", username);
-      // Redirect with an error flag so you know what happened
-      redirect("/?error=github_fetch_failed");
+      console.log(`⚠️ Using Fallback Profile for ${username} (GitHub API limit likely reached)`);
+      myCharacter = {
+          username: username,
+          avatar: session.user.image || "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png",
+          class: "Frontend Warrior", // Default class
+          level: 1,
+          stats: {
+              hp: 100,
+              attack: 15,
+              defense: 5,
+              speed: 10
+          }
+      };
   }
 
   // 3. Render the Room
