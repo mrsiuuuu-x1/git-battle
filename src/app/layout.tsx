@@ -1,6 +1,7 @@
 import "./globals.css";
 import type { Metadata } from "next";
 import { Providers } from "./providers";
+import BackgroundMusic from "./components/BackgroundMusic";
 
 export const metadata: Metadata = {
   title: "Git Battle",
@@ -19,6 +20,7 @@ export default function RootLayout({
       </head>
       <body className="antialiased">
         <Providers>
+          <BackgroundMusic />
           {children}
         </Providers>
       </body>
