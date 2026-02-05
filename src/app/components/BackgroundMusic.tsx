@@ -11,6 +11,39 @@ export default function BackgroundMusic() {
 
     const [isPlaying, setIsPlaying] = useState(false);
 
+    useEffect(() => {
+    const handleFirstInteraction = () => {
+      play();
+      setIsPlaying(true);
+
+      document.removeEventListener('click', handleFirstInteraction);
+      document.removeEventListener('keydown', handleFirstInteraction);
+    };
+
+    
+    document.addEventListener('click', handleFirstInteraction);
+    document.addEventListener('keydown', handleFirstInteraction);
+
+    
+    const timer = setTimeout(() => {
+      try {
+        play();
+        setIsPlaying(true);
+        
+        document.removeEventListener('click', handleFirstInteraction);
+        document.removeEventListener('keydown', handleFirstInteraction);
+      } catch (e) {
+        console.log("Autoplay blocked by browser - waiting for click");
+      }
+    }, 500);
+
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener('click', handleFirstInteraction);
+      document.removeEventListener('keydown', handleFirstInteraction);
+    };
+  }, [play]);
+
     // toggle function(music on/off)
     const toggleMusic = () => {
         if (isPlaying) {
