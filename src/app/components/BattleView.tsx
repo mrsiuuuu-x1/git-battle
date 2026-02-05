@@ -13,12 +13,22 @@ interface BattleViewProps {
   player: Character;
   opponent: Character;
   onReset: () => void;
-  onMainMenu?: () => void; // 👈 New optional prop
+  onMainMenu?: () => void; 
+  opponentHasLeft?: boolean; // 👈 New Prop
   gameMode?: "pve" | "pvp";
   roomId?: string;
 }
 
-export default function BattleView({ player, opponent, onReset, onMainMenu, gameMode = "pve", roomId }: BattleViewProps) {
+export default function BattleView({ 
+    player, 
+    opponent, 
+    onReset, 
+    onMainMenu, 
+    opponentHasLeft = false, // Default false
+    gameMode = "pve", 
+    roomId 
+}: BattleViewProps) {
+    
   const [battleState, setBattleState] = useState<BattleState | null>(null);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
 
@@ -463,14 +473,19 @@ export default function BattleView({ player, opponent, onReset, onMainMenu, game
             </p>
             
             <div className="flex flex-col gap-4">
+                {/* 🔥 DISABLED IF OPPONENT LEFT 🔥 */}
                 <button 
                   onClick={onReset}
-                  className="bg-white text-black border-4 border-black px-8 py-4 text-xl hover:bg-gray-200 pixel-shadow retro-font cursor-pointer"
+                  disabled={opponentHasLeft} 
+                  className={`border-4 border-black px-8 py-4 text-xl pixel-shadow retro-font cursor-pointer
+                    ${opponentHasLeft 
+                       ? "bg-gray-500 text-gray-300 cursor-not-allowed" 
+                       : "bg-white text-black hover:bg-gray-200"
+                    }`}
                 >
-                  PLAY AGAIN
+                  {opponentHasLeft ? "OPPONENT LEFT" : "PLAY AGAIN"}
                 </button>
 
-                {/* 🔥 NEW MAIN MENU BUTTON 🔥 */}
                 {onMainMenu && (
                     <button 
                       onClick={onMainMenu}

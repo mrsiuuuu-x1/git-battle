@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Character } from "../lib/github";
 import { pusherClient } from "../lib/pusher";
-import { notifyPlayerReady, joinMultiplayerRoom, notifyHostReply } from "../actions"; 
+import { notifyPlayerReady, joinMultiplayerRoom, notifyHostReply, notifyOpponentLeft } from "../actions"; 
 import UserCard from "./UserCard"; 
 import BattleView from "./BattleView";
 import { playSound } from "../lib/sounds";
@@ -22,7 +22,15 @@ export default function ActiveRoom({ player, roomId, initialOpponent }: ActiveRo
   const [isOpponentReady, setIsOpponentReady] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
   
+  // 🔥 Exit Logic States
+  const [opponentLeft, setOpponentLeft] = useState(false);
+  const [closingIn, setClosingIn] = useState<number | null>(null);
+
   const isHostRef = useRef(!initialOpponent);
+  
+  // 🔥 NEW: Track game state in a Ref so Pusher can read it without re-subscribing
+  const gameStartedRef = useRef(gameStarted);
+  useEffect(() => { gameStartedRef.current = gameStarted; }, [gameStarted]);
 
   // 1. Handshake & Room Events
   useEffect(() => {
@@ -32,11 +40,12 @@ export default function ActiveRoom({ player, roomId, initialOpponent }: ActiveRo
 
     const channel = pusherClient.subscribe(roomId);
 
-    // Opponent Joined
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     channel.bind("user-joined", async (incomingPlayer: any) => {
       if (incomingPlayer.username === player.username) return;
       setOpponent(incomingPlayer);
+      setOpponentLeft(false); 
+      setClosingIn(null); // Cancel timer if they rejoin
       //playSound("beep"); 
 
       if (isHostRef.current) {
@@ -44,15 +53,15 @@ export default function ActiveRoom({ player, roomId, initialOpponent }: ActiveRo
       }
     });
 
-    // Host Replied
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     channel.bind("host-reply", (hostProfile: any) => {
         if (hostProfile.username === player.username) return;
         setOpponent(hostProfile);
+        setOpponentLeft(false);
+        setClosingIn(null);
         isHostRef.current = false; 
     });
 
-    // Ready Check
     channel.bind("player-ready", (data: { username: string }) => {
       if (data.username !== player.username) {
         setIsOpponentReady(true);
@@ -60,36 +69,66 @@ export default function ActiveRoom({ player, roomId, initialOpponent }: ActiveRo
       }
     });
 
+    // 🔥 OPPONENT LEFT (Logic Moved Here to fix the Error)
+    channel.bind("player-left", (data: { username: string }) => {
+        if (data.username !== player.username) {
+            setOpponentLeft(true);
+            setOpponent(null);
+            setIsOpponentReady(false);
+            
+            // Only start countdown if we are IN THE LOBBY
+            if (!gameStartedRef.current) {
+                setClosingIn(3); 
+            }
+        }
+    });
+
     return () => {
       channel.unbind_all();
       pusherClient.unsubscribe(roomId);
     };
-  }, [roomId, player]);
+  }, [roomId, player]); // Removed dependencies that caused loops
 
   // 2. Start Game Check
   useEffect(() => {
-    if (amIReady && isOpponentReady && opponent) {
+    if (amIReady && isOpponentReady && opponent && !opponentLeft) {
       setTimeout(() => {
         setGameStarted(true);
         //playSound("start");
       }, 500);
     }
-  }, [amIReady, isOpponentReady, opponent]);
+  }, [amIReady, isOpponentReady, opponent, opponentLeft]);
+
+  // 3. Timer Tick Logic (Only handles decrementing)
+  useEffect(() => {
+      if (closingIn !== null) {
+          if (closingIn <= 0) {
+              router.push("/"); // Time up
+          } else {
+              const timer = setTimeout(() => {
+                  setClosingIn((prev) => (prev !== null ? prev - 1 : null));
+              }, 1000);
+              return () => clearTimeout(timer);
+          }
+      }
+  }, [closingIn, router]);
+
 
   const handleReadyClick = async () => {
     setAmIReady(true);
     await notifyPlayerReady(roomId, player.username);
   };
 
-  // 🔥 UPDATED: Local Reset Only
   const handlePlayAgain = () => {
-      setGameStarted(false);     // Go back to lobby locally
-      setAmIReady(false);        // Uncheck my ready status
-      setIsOpponentReady(false); // Assume opponent is not ready yet
+      setGameStarted(false);     
+      setAmIReady(false);        
+      setIsOpponentReady(false); 
   };
 
-  // 🔥 NEW: Exit to Menu
-  const handleMainMenu = () => {
+  const handleMainMenu = async () => {
+      if (opponent) {
+        await notifyOpponentLeft(roomId, player.username);
+      }
       router.push("/");
   };
 
@@ -100,22 +139,33 @@ export default function ActiveRoom({ player, roomId, initialOpponent }: ActiveRo
         opponent={opponent} 
         roomId={roomId}
         gameMode="pvp"
-        onReset={handlePlayAgain}   // 👈 Pass local reset
-        onMainMenu={handleMainMenu} // 👈 Pass main menu handler
+        onReset={handlePlayAgain}   
+        onMainMenu={handleMainMenu} 
+        opponentHasLeft={opponentLeft} 
       />
     );
   }
 
-  // ... (Lobby UI remains exactly the same as before) ...
   return (
     <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center p-4 relative">
       
       <button 
-        onClick={() => router.push("/")}
+        onClick={handleMainMenu}
         className="absolute top-4 left-4 retro-font text-xs text-gray-400 hover:text-white underline z-20"
       >
         ← EXIT TO MENU
       </button>
+
+      {/* 🔥 POPUP WARNING 🔥 */}
+      {closingIn !== null && (
+          <div className="absolute inset-0 bg-black/90 z-50 flex items-center justify-center animate-in fade-in">
+              <div className="bg-white border-4 border-black p-8 text-center">
+                  <h2 className="retro-font text-red-500 text-xl mb-4">OPPONENT LEFT!</h2>
+                  <p className="retro-font text-sm mb-4">Returning to menu in...</p>
+                  <p className="retro-font text-4xl">{closingIn}</p>
+              </div>
+          </div>
+      )}
 
       <div className="mb-10 text-center">
          <h1 className="retro-font text-3xl md:text-4xl text-white mb-2 animate-pulse">
@@ -127,6 +177,8 @@ export default function ActiveRoom({ player, roomId, initialOpponent }: ActiveRo
       </div>
 
       <div className="flex flex-col md:flex-row items-center gap-10 md:gap-20">
+        
+        {/* MY CARD */}
         <div className="flex flex-col items-center gap-4">
           <div className="relative">
              {player && <UserCard character={player} />}
@@ -141,10 +193,12 @@ export default function ActiveRoom({ player, roomId, initialOpponent }: ActiveRo
           <p className="retro-font text-white text-sm">YOU</p>
         </div>
 
+        {/* VS LOGO */}
         <div className="retro-font text-5xl text-[#ffd700] drop-shadow-[4px_4px_0_#000]">
             VS
         </div>
 
+        {/* OPPONENT CARD */}
         <div className="flex flex-col items-center gap-4">
           {opponent ? (
             <div className="relative">
@@ -162,7 +216,7 @@ export default function ActiveRoom({ player, roomId, initialOpponent }: ActiveRo
                 <div className="text-center p-4">
                     <div className="w-12 h-12 border-4 border-[#4ecdc4] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
                     <p className="retro-font text-gray-500 text-xs animate-pulse">
-                        SCANNING NETWORK...
+                        {opponentLeft ? "OPPONENT LEFT" : "SCANNING NETWORK..."}
                     </p>
                 </div>
             </div>
