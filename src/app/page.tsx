@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { useSession, signIn, signOut } from "next-auth/react";
-import { useRouter } from "next/navigation"; 
-import { getLeaderboard, createRoom, getPublicRooms } from "./actions"; // Removed joinRoomDB import
+import { useRouter, useSearchParams } from "next/navigation"; // 👈 Added useSearchParams
+import { getLeaderboard, createRoom, getPublicRooms } from "./actions"; 
 import BattleView from "./components/BattleView";
 import { getCharacterProfile, Character } from "./lib/github";
 import { PixelSword, PixelShield } from "./components/PixelIcons";
@@ -11,6 +11,7 @@ import { PixelSword, PixelShield } from "./components/PixelIcons";
 export default function Home() {
   const { data: session, status } = useSession();
   const router = useRouter(); 
+  const searchParams = useSearchParams(); // 👈 Get URL params
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [loadingGame, setLoadingGame] = useState(false);
@@ -26,6 +27,13 @@ export default function Home() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [publicRooms, setPublicRooms] = useState<any[]>([]);
   const [errorMsg, setErrorMsg] = useState("");
+
+  // 🔥 NEW: Check URL for ?mode=multiplayer
+  useEffect(() => {
+    if (searchParams.get("mode") === "multiplayer") {
+        setMenuStep("multiplayer");
+    }
+  }, [searchParams]);
 
   const handleShowLeaderboard = async () => {
     const data = await getLeaderboard();
@@ -107,7 +115,6 @@ export default function Home() {
     );
   }
 
-  // 🔥 UPDATED: JOIN LOGIC (SKIP DB CHECK) 🔥
   const handleJoinSpecificRoom = async (targetRoomId: string, isHost: boolean) => {
     if (!targetRoomId) return alert("Please enter a Room ID!");
 
@@ -116,11 +123,6 @@ export default function Home() {
     if (!username) return alert("You must be logged in!");
 
     setIsWaiting(true);
-
-    // 👇 WE REMOVED THE DB CHECKS HERE 👇
-    // We just trust the code and go. The Lobby Handshake will verify the connection.
-    
-    // 🚀 REDIRECT INSTANTLY 🚀
     router.push(`/lobby/${targetRoomId}`);
   };
 

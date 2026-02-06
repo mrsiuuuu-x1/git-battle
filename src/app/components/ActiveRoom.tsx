@@ -28,8 +28,6 @@ export default function ActiveRoom({ player, roomId, initialOpponent }: ActiveRo
   const [opponentLeft, setOpponentLeft] = useState(false);
 
   const isHostRef = useRef(!initialOpponent);
-
-  // 🔥 FIX: Track game status in a Ref so the Event Listener can see it
   const gameStartedRef = useRef(gameStarted);
   
   // Keep Ref in sync with state
@@ -44,7 +42,6 @@ export default function ActiveRoom({ player, roomId, initialOpponent }: ActiveRo
     joinMultiplayerRoom(roomId, player);
     const channel = pusherClient.subscribe(roomId);
 
-    // Opponent Joined
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     channel.bind("user-joined", async (incomingPlayer: any) => {
       if (incomingPlayer.username === player.username) return;
@@ -57,7 +54,6 @@ export default function ActiveRoom({ player, roomId, initialOpponent }: ActiveRo
       }
     });
 
-    // Host Reply
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     channel.bind("host-reply", (hostProfile: any) => {
         if (hostProfile.username === player.username) return;
@@ -66,7 +62,6 @@ export default function ActiveRoom({ player, roomId, initialOpponent }: ActiveRo
         isHostRef.current = false; 
     });
 
-    // Ready
     channel.bind("player-ready", (data: { username: string }) => {
       if (data.username !== player.username) {
         setIsOpponentReady(true);
@@ -74,15 +69,12 @@ export default function ActiveRoom({ player, roomId, initialOpponent }: ActiveRo
       }
     });
 
-    // 🔥 OPPONENT LEFT (FIXED)
     channel.bind("player-left", (data: { username: string }) => {
         if (data.username !== player.username) {
             setOpponentLeft(true);
             
-            // 🔥 CRITICAL FIX: 
-            // If the game IS running (or ended), we keep the opponent data 
-            // so the BattleView stays on screen to show "Opponent Left".
-            // We ONLY remove them if we are still in the waiting lobby.
+            // If game is NOT running, delete the opponent from the lobby immediately.
+            // If it IS running, we keep them visible so we can show "Opponent Left" overlay.
             if (!gameStartedRef.current) {
                 setOpponent(null);
                 setIsOpponentReady(false);
@@ -117,7 +109,8 @@ export default function ActiveRoom({ player, roomId, initialOpponent }: ActiveRo
       if (opponent && !opponentLeft) {
         await notifyOpponentLeft(roomId, player.username);
       }
-      router.push("/"); // Go back to Main Menu
+      // 🔥 UPDATED: Go straight to the Multiplayer menu
+      router.push("/?mode=multiplayer"); 
   };
 
 
@@ -125,8 +118,6 @@ export default function ActiveRoom({ player, roomId, initialOpponent }: ActiveRo
   // RENDER
   // ---------------------------------------------------------
   
-  // BATTLE VIEW
-  // Since we don't set opponent to null if gameStarted is true, this stays valid!
   if (gameStarted && opponent) {
        return (
            <BattleView 
