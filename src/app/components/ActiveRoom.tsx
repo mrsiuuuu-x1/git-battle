@@ -24,10 +24,18 @@ export default function ActiveRoom({ player, roomId, initialOpponent }: ActiveRo
   const [isOpponentReady, setIsOpponentReady] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
   
-  // Simple Exit State
+  // Exit State
   const [opponentLeft, setOpponentLeft] = useState(false);
 
   const isHostRef = useRef(!initialOpponent);
+
+  // 🔥 FIX: Track game status in a Ref so the Event Listener can see it
+  const gameStartedRef = useRef(gameStarted);
+  
+  // Keep Ref in sync with state
+  useEffect(() => {
+    gameStartedRef.current = gameStarted;
+  }, [gameStarted]);
 
   // 1. Handshake & Room Events
   useEffect(() => {
@@ -66,12 +74,19 @@ export default function ActiveRoom({ player, roomId, initialOpponent }: ActiveRo
       }
     });
 
-    // Opponent Left
+    // 🔥 OPPONENT LEFT (FIXED)
     channel.bind("player-left", (data: { username: string }) => {
         if (data.username !== player.username) {
             setOpponentLeft(true);
-            setOpponent(null); // Clear opponent from lobby view
-            setIsOpponentReady(false);
+            
+            // 🔥 CRITICAL FIX: 
+            // If the game IS running (or ended), we keep the opponent data 
+            // so the BattleView stays on screen to show "Opponent Left".
+            // We ONLY remove them if we are still in the waiting lobby.
+            if (!gameStartedRef.current) {
+                setOpponent(null);
+                setIsOpponentReady(false);
+            }
         }
     });
 
@@ -98,7 +113,6 @@ export default function ActiveRoom({ player, roomId, initialOpponent }: ActiveRo
     await notifyPlayerReady(roomId, player.username);
   };
 
-  // 🔥 UPDATED: Both buttons now do the same safe exit
   const handleExit = async () => {
       if (opponent && !opponentLeft) {
         await notifyOpponentLeft(roomId, player.username);
@@ -112,6 +126,7 @@ export default function ActiveRoom({ player, roomId, initialOpponent }: ActiveRo
   // ---------------------------------------------------------
   
   // BATTLE VIEW
+  // Since we don't set opponent to null if gameStarted is true, this stays valid!
   if (gameStarted && opponent) {
        return (
            <BattleView 
@@ -119,7 +134,6 @@ export default function ActiveRoom({ player, roomId, initialOpponent }: ActiveRo
               opponent={opponent} 
               roomId={roomId}
               gameMode="pvp"
-              // Both buttons now exit to menu
               onReset={handleExit}   
               onMainMenu={handleExit} 
               opponentHasLeft={opponentLeft} 
