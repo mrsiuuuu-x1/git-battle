@@ -8,13 +8,10 @@ import BattleView from "./components/BattleView";
 import { getCharacterProfile, Character } from "./lib/github";
 import { PixelSword, PixelShield } from "./components/PixelIcons";
 
-// ---------------------------------------------------------
-// 1. INNER COMPONENT (Contains all your logic + useSearchParams)
-// ---------------------------------------------------------
 function HomeContent() {
   const { data: session, status } = useSession();
   const router = useRouter(); 
-  const searchParams = useSearchParams(); // 👈 This caused the build error before
+  const searchParams = useSearchParams();
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [loadingGame, setLoadingGame] = useState(false);
@@ -168,7 +165,7 @@ function HomeContent() {
                       onClick={handleShowLeaderboard}
                       className="w-full bg-[#fcee09] border-4 border-black cursor-pointer text-black retro-font py-4 text-xl hover:bg-yellow-400 hover:-translate-y-1 hover:shadow-[4px_4px_0_#000] transition-all flex justify-center items-center gap-2"
                     >
-                      🏆 LEADERBOARD
+                       LEADERBOARD
                     </button>
 
                     <button 
@@ -383,9 +380,6 @@ function HomeContent() {
   );
 }
 
-// ---------------------------------------------------------
-// 2. MAIN EXPORT (Wraps content in Suspense)
-// ---------------------------------------------------------
 export default function Home() {
   return (
     <Suspense fallback={

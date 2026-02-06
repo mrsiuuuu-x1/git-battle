@@ -14,7 +14,7 @@ interface BattleViewProps {
   opponent: Character;
   onReset: () => void;
   onMainMenu?: () => void; 
-  opponentHasLeft?: boolean; // 👈 New Prop
+  opponentHasLeft?: boolean;
   gameMode?: "pve" | "pvp";
   roomId?: string;
 }
@@ -24,7 +24,7 @@ export default function BattleView({
     opponent, 
     onReset, 
     onMainMenu, 
-    opponentHasLeft = false, // Default false
+    opponentHasLeft = false,
     gameMode = "pve", 
     roomId 
 }: BattleViewProps) {
@@ -473,7 +473,6 @@ export default function BattleView({
             </p>
             
             <div className="flex flex-col gap-4">
-                {/* 🔥 DISABLED IF OPPONENT LEFT 🔥 */}
                 <button 
                   onClick={onReset}
                   disabled={opponentHasLeft} 

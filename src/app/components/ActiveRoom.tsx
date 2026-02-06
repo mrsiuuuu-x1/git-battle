@@ -17,25 +17,19 @@ interface ActiveRoomProps {
 
 export default function ActiveRoom({ player, roomId, initialOpponent }: ActiveRoomProps) {
   const router = useRouter();
-  
-  // Game State
   const [opponent, setOpponent] = useState<Character | null>(initialOpponent || null);
   const [amIReady, setAmIReady] = useState(false);
   const [isOpponentReady, setIsOpponentReady] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
-  
-  // Exit State
   const [opponentLeft, setOpponentLeft] = useState(false);
-
   const isHostRef = useRef(!initialOpponent);
   const gameStartedRef = useRef(gameStarted);
-  
-  // Keep Ref in sync with state
+
   useEffect(() => {
     gameStartedRef.current = gameStarted;
   }, [gameStarted]);
 
-  // 1. Handshake & Room Events
+  // Handshake & Room Events
   useEffect(() => {
     if (!roomId) return;
 
@@ -47,7 +41,7 @@ export default function ActiveRoom({ player, roomId, initialOpponent }: ActiveRo
       if (incomingPlayer.username === player.username) return;
       setOpponent(incomingPlayer);
       setOpponentLeft(false);
-      //playSound("beep"); 
+      playSound("beep"); 
 
       if (isHostRef.current) {
           await notifyHostReply(roomId, player);
@@ -65,16 +59,14 @@ export default function ActiveRoom({ player, roomId, initialOpponent }: ActiveRo
     channel.bind("player-ready", (data: { username: string }) => {
       if (data.username !== player.username) {
         setIsOpponentReady(true);
-        //playSound("beep");
+        playSound("beep");
       }
     });
 
     channel.bind("player-left", (data: { username: string }) => {
         if (data.username !== player.username) {
             setOpponentLeft(true);
-            
-            // If game is NOT running, delete the opponent from the lobby immediately.
-            // If it IS running, we keep them visible so we can show "Opponent Left" overlay.
+
             if (!gameStartedRef.current) {
                 setOpponent(null);
                 setIsOpponentReady(false);
@@ -88,12 +80,12 @@ export default function ActiveRoom({ player, roomId, initialOpponent }: ActiveRo
     };
   }, [roomId, player]); 
 
-  // 2. Start Game Logic
+  // Start Game Logic
   useEffect(() => {
     if (amIReady && isOpponentReady && opponent && !opponentLeft) {
       setTimeout(() => {
         setGameStarted(true);
-        //playSound("start");
+        playSound("start");
       }, 500);
     }
   }, [amIReady, isOpponentReady, opponent, opponentLeft]);
@@ -109,14 +101,8 @@ export default function ActiveRoom({ player, roomId, initialOpponent }: ActiveRo
       if (opponent && !opponentLeft) {
         await notifyOpponentLeft(roomId, player.username);
       }
-      // 🔥 UPDATED: Go straight to the Multiplayer menu
       router.push("/?mode=multiplayer"); 
   };
-
-
-  // ---------------------------------------------------------
-  // RENDER
-  // ---------------------------------------------------------
   
   if (gameStarted && opponent) {
        return (
@@ -214,7 +200,7 @@ export default function ActiveRoom({ player, roomId, initialOpponent }: ActiveRo
                                 : "bg-[#ffd700] text-black hover:-translate-y-2 hover:shadow-[12px_12px_0px_#000] hover:bg-yellow-300"
                             }`}
                     >
-                        {amIReady ? "WAITING FOR OPPONENT..." : "⚔️ FIGHT!"}
+                        {amIReady ? "WAITING FOR OPPONENT..." : "FIGHT!"}
                     </button>
                 )}
             </div>

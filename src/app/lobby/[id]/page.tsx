@@ -4,26 +4,22 @@ import { redirect } from "next/navigation";
 import { getCharacterProfile } from "@/app/lib/github";
 import ActiveRoom from "../../components/ActiveRoom"; 
 
-// 🔥 UPDATED: Params is now a Promise in Next.js 15
 interface PageProps {
   params: Promise<{ id: string }>;
 }
 
 export default async function LobbyPage({ params }: PageProps) {
-  // 1. Check if user is logged in
   const session = await getServerSession(authOptions);
   
   if (!session || !session.user?.name) {
     redirect("/");
   }
 
-  // 🔥 FIX: Await the params to get the ID correctly
   const resolvedParams = await params;
   const roomId = resolvedParams.id;
   
   const username = session.user.name;
 
-  // 2. Fetch MY stats
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let myCharacter: any = null;
   
@@ -33,9 +29,9 @@ export default async function LobbyPage({ params }: PageProps) {
       console.error("Failed to fetch character:", e);
   }
 
-  // Fallback Profile (Guest Mode)
+  // fallback profile
   if (!myCharacter) {
-      console.log(`⚠️ Using Fallback Profile for ${username}`);
+      console.log(`Using Fallback Profile for ${username}`);
       myCharacter = {
           username: username,
           avatar: session.user.image || "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png",
@@ -45,7 +41,6 @@ export default async function LobbyPage({ params }: PageProps) {
       };
   }
 
-  // 3. Render the Room
   return (
     <ActiveRoom 
       player={myCharacter} 
