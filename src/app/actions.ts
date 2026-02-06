@@ -136,20 +136,26 @@ export async function createRoom(hostUsername: string, isPrivate: boolean = fals
 
 export async function getPublicRooms() {
   try {
-    const rooms = await prisma.room.findMany({
+    const sixMinutesAgo = new Date(Date.now() - 6 * 60 * 1000);
+    
+    await prisma.room.deleteMany({
       where: {
-        status: "WAITING",
-        isPrivate: false,
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-      take: 10,
+        createdAt: {
+          lt: sixMinutesAgo
+        }
+      }
     });
-    return { success: true, rooms };
+
+    const rooms = await prisma.room.findMany({
+      where: { isPrivate: false },
+      orderBy: { createdAt: 'desc' },
+      take: 20
+    });
+
+    return { rooms };
   } catch (error) {
     console.error("Error fetching rooms:", error);
-    return { success: false, rooms: [] };
+    return { rooms: [] };
   }
 }
 
