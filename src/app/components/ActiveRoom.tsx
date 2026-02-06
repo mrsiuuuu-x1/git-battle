@@ -24,8 +24,7 @@ export default function ActiveRoom({ player, roomId, initialOpponent }: ActiveRo
   const [isOpponentReady, setIsOpponentReady] = useState(false);
   const [gameStarted, setGameStarted] = useState(false);
   
-  // Exit Logic State
-  const [closingIn, setClosingIn] = useState<number | null>(null);
+  // Simple Exit State
   const [opponentLeft, setOpponentLeft] = useState(false);
 
   const isHostRef = useRef(!initialOpponent);
@@ -37,13 +36,12 @@ export default function ActiveRoom({ player, roomId, initialOpponent }: ActiveRo
     joinMultiplayerRoom(roomId, player);
     const channel = pusherClient.subscribe(roomId);
 
-    // Event: Opponent Joined
+    // Opponent Joined
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     channel.bind("user-joined", async (incomingPlayer: any) => {
       if (incomingPlayer.username === player.username) return;
       setOpponent(incomingPlayer);
       setOpponentLeft(false);
-      setClosingIn(null); // Stop timer if they come back
       //playSound("beep"); 
 
       if (isHostRef.current) {
@@ -51,17 +49,16 @@ export default function ActiveRoom({ player, roomId, initialOpponent }: ActiveRo
       }
     });
 
-    // Event: Host Reply
+    // Host Reply
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     channel.bind("host-reply", (hostProfile: any) => {
         if (hostProfile.username === player.username) return;
         setOpponent(hostProfile);
         setOpponentLeft(false);
-        setClosingIn(null);
         isHostRef.current = false; 
     });
 
-    // Event: Ready
+    // Ready
     channel.bind("player-ready", (data: { username: string }) => {
       if (data.username !== player.username) {
         setIsOpponentReady(true);
@@ -69,16 +66,12 @@ export default function ActiveRoom({ player, roomId, initialOpponent }: ActiveRo
       }
     });
 
-    // 🔥 EVENT: OPPONENT LEFT
-    // This now triggers immediately, no matter what screen you are on.
+    // Opponent Left
     channel.bind("player-left", (data: { username: string }) => {
         if (data.username !== player.username) {
             setOpponentLeft(true);
-            setOpponent(null);
+            setOpponent(null); // Clear opponent from lobby view
             setIsOpponentReady(false);
-            
-            // Start the countdown immediately!
-            setClosingIn(3);
         }
     });
 
@@ -98,20 +91,6 @@ export default function ActiveRoom({ player, roomId, initialOpponent }: ActiveRo
     }
   }, [amIReady, isOpponentReady, opponent, opponentLeft]);
 
-  // 3. Timer Logic
-  useEffect(() => {
-      if (closingIn !== null) {
-          if (closingIn <= 0) {
-              router.push("/"); // Redirect to Home
-          } else {
-              const timer = setTimeout(() => {
-                  setClosingIn((prev) => (prev !== null ? prev - 1 : null));
-              }, 1000);
-              return () => clearTimeout(timer);
-          }
-      }
-  }, [closingIn, router]);
-
 
   // Actions
   const handleReadyClick = async () => {
@@ -119,61 +98,40 @@ export default function ActiveRoom({ player, roomId, initialOpponent }: ActiveRo
     await notifyPlayerReady(roomId, player.username);
   };
 
-  const handlePlayAgain = () => {
-      setGameStarted(false);     
-      setAmIReady(false);        
-      setIsOpponentReady(false); 
-      // If the opponent is already gone (left during game over screen),
-      // the timer is already ticking from the event listener.
-  };
-
-  const handleMainMenu = async () => {
-      if (opponent) {
+  // 🔥 UPDATED: Both buttons now do the same safe exit
+  const handleExit = async () => {
+      if (opponent && !opponentLeft) {
         await notifyOpponentLeft(roomId, player.username);
       }
-      router.push("/");
+      router.push("/"); // Go back to Main Menu
   };
 
 
   // ---------------------------------------------------------
-  // RENDER (LAYOUT METHOD - NO EARLY RETURNS)
+  // RENDER
   // ---------------------------------------------------------
-  return (
-    <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center p-4 relative">
-      
-      {/* 🔥 1. GLOBAL POPUP (Always visible if active) 🔥 */}
-      {closingIn !== null && (
-          <div className="fixed inset-0 bg-black/95 z-[9999] flex items-center justify-center animate-in fade-in duration-300">
-              <div className="bg-white border-4 border-black p-10 text-center shadow-[0_0_50px_rgba(255,0,0,0.5)]">
-                  <h2 className="retro-font text-[#ff6b6b] text-2xl mb-6 animate-bounce">OPPONENT DISCONNECTED</h2>
-                  <p className="retro-font text-gray-800 text-sm mb-6">RETURNING TO MENU IN...</p>
-                  <div className="retro-font text-6xl font-bold">{closingIn}</div>
-              </div>
-          </div>
-      )}
-
-      {/* 2. MAIN CONTENT SWITCHER */}
-      {gameStarted && opponent ? (
-        
-        // --- BATTLE VIEW ---
-        <div className="w-full h-full">
+  
+  // BATTLE VIEW
+  if (gameStarted && opponent) {
+       return (
            <BattleView 
               player={player} 
               opponent={opponent} 
               roomId={roomId}
               gameMode="pvp"
-              onReset={handlePlayAgain}   
-              onMainMenu={handleMainMenu} 
+              // Both buttons now exit to menu
+              onReset={handleExit}   
+              onMainMenu={handleExit} 
               opponentHasLeft={opponentLeft} 
             />
-        </div>
+        );
+  }
 
-      ) : (
-
-        // --- LOBBY VIEW ---
-        <>
+  // LOBBY VIEW
+  return (
+    <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center p-4 relative">
             <button 
-                onClick={handleMainMenu}
+                onClick={handleExit}
                 className="absolute top-4 left-4 retro-font text-xs text-gray-400 hover:text-white underline z-20"
             >
                 ← EXIT TO MENU
@@ -255,9 +213,6 @@ export default function ActiveRoom({ player, roomId, initialOpponent }: ActiveRo
                     </button>
                 )}
             </div>
-        </>
-      )}
-
     </div>
   );
 }
