@@ -1,17 +1,20 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSession, signIn, signOut } from "next-auth/react";
-import { useRouter, useSearchParams } from "next/navigation"; // 👈 Added useSearchParams
+import { useRouter, useSearchParams } from "next/navigation"; 
 import { getLeaderboard, createRoom, getPublicRooms } from "./actions"; 
 import BattleView from "./components/BattleView";
 import { getCharacterProfile, Character } from "./lib/github";
 import { PixelSword, PixelShield } from "./components/PixelIcons";
 
-export default function Home() {
+// ---------------------------------------------------------
+// 1. INNER COMPONENT (Contains all your logic + useSearchParams)
+// ---------------------------------------------------------
+function HomeContent() {
   const { data: session, status } = useSession();
   const router = useRouter(); 
-  const searchParams = useSearchParams(); // 👈 Get URL params
+  const searchParams = useSearchParams(); // 👈 This caused the build error before
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [loadingGame, setLoadingGame] = useState(false);
@@ -28,7 +31,7 @@ export default function Home() {
   const [publicRooms, setPublicRooms] = useState<any[]>([]);
   const [errorMsg, setErrorMsg] = useState("");
 
-  // 🔥 NEW: Check URL for ?mode=multiplayer
+  // Check URL for ?mode=multiplayer
   useEffect(() => {
     if (searchParams.get("mode") === "multiplayer") {
         setMenuStep("multiplayer");
@@ -377,5 +380,20 @@ export default function Home() {
         </div>
       )}
     </div>
+  );
+}
+
+// ---------------------------------------------------------
+// 2. MAIN EXPORT (Wraps content in Suspense)
+// ---------------------------------------------------------
+export default function Home() {
+  return (
+    <Suspense fallback={
+        <div className="min-h-screen bg-[#2d3748] flex items-center justify-center">
+            <div className="retro-font text-white text-2xl animate-pulse">LOADING BATTLE...</div>
+        </div>
+    }>
+      <HomeContent />
+    </Suspense>
   );
 }
