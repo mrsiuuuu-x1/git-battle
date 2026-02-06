@@ -28,6 +28,14 @@ export default function ActiveRoom({ player, roomId, initialOpponent }: ActiveRo
 
   const isHostRef = useRef(!initialOpponent);
 
+  // 🔥 NEW: Track game status in a Ref so the Event Listener can read it safely
+  const gameStartedRef = useRef(gameStarted);
+  
+  // Keep the Ref in sync with the state
+  useEffect(() => {
+    gameStartedRef.current = gameStarted;
+  }, [gameStarted]);
+
   // 1. Handshake & Room Events
   useEffect(() => {
     if (!roomId) return;
@@ -41,7 +49,7 @@ export default function ActiveRoom({ player, roomId, initialOpponent }: ActiveRo
       if (incomingPlayer.username === player.username) return;
       setOpponent(incomingPlayer);
       setOpponentLeft(false); 
-      setClosingIn(null); // Stop timer if they come back
+      setClosingIn(null); // Cancel timer if they rejoin
       //playSound("beep"); 
 
       if (isHostRef.current) {
@@ -65,12 +73,18 @@ export default function ActiveRoom({ player, roomId, initialOpponent }: ActiveRo
       }
     });
 
-    // 🔥 OPPONENT LEFT EVENT
+    // 🔥 OPPONENT LEFT (Fixed Logic)
     channel.bind("player-left", (data: { username: string }) => {
         if (data.username !== player.username) {
             setOpponentLeft(true);
             setOpponent(null);
             setIsOpponentReady(false);
+            
+            // Check the REF to see if we should start the timer immediately
+            // This avoids the ESLint error and state sync issues
+            if (!gameStartedRef.current) {
+                setClosingIn(3); 
+            }
         }
     });
 
@@ -78,7 +92,7 @@ export default function ActiveRoom({ player, roomId, initialOpponent }: ActiveRo
       channel.unbind_all();
       pusherClient.unsubscribe(roomId);
     };
-  }, [roomId, player]);
+  }, [roomId, player]); 
 
   // 2. Start Game Check
   useEffect(() => {
@@ -90,24 +104,11 @@ export default function ActiveRoom({ player, roomId, initialOpponent }: ActiveRo
     }
   }, [amIReady, isOpponentReady, opponent, opponentLeft]);
 
-
-  // 3. 🔥 FIX: Trigger Timer when Opponent is gone and we are in Lobby
-  useEffect(() => {
-      // If we are in the lobby (not playing) AND the opponent is gone...
-      if (!gameStarted && opponentLeft) {
-          // ...and the timer hasn't started yet
-          if (closingIn === null) {
-              setClosingIn(3);
-          }
-      }
-  }, [gameStarted, opponentLeft, closingIn]);
-
-
-  // 4. Timer Countdown Logic
+  // 3. Timer Countdown Logic
   useEffect(() => {
       if (closingIn !== null) {
           if (closingIn <= 0) {
-              router.push("/"); // Time's up!
+              router.push("/"); // Time up
           } else {
               const timer = setTimeout(() => {
                   setClosingIn((prev) => (prev !== null ? prev - 1 : null));
@@ -127,11 +128,14 @@ export default function ActiveRoom({ player, roomId, initialOpponent }: ActiveRo
       setGameStarted(false);     
       setAmIReady(false);        
       setIsOpponentReady(false); 
-      // Note: If opponent already left, the useEffect above will catch it immediately
+      // Note: If opponent already left, the 'player-left' event listener handles the logic
+      // because we reset 'gameStarted' to false, but the opponentLeft state remains true.
+      if (opponentLeft) {
+          setClosingIn(3);
+      }
   };
 
   const handleMainMenu = async () => {
-      // Notify other player before leaving
       if (opponent) {
         await notifyOpponentLeft(roomId, player.username);
       }
