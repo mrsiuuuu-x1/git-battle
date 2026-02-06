@@ -5,6 +5,7 @@
 Git Battle takes two GitHub usernames, analyzes their profiles (Repositories, Followers, Activity), and generates a unique RPG character class and stats. Battle your friends or famous developers in a retro 8-bit arena!
 
 ![Git Battle Screenshot](./public/screenshot.png) 
+
 ## Features
 
 * **Real-Time Data:** Fetches live data from the GitHub API.
@@ -12,7 +13,6 @@ Git Battle takes two GitHub usernames, analyzes their profiles (Repositories, Fo
     * **Frontend Warrior:** High Speed. Special: *Pixel Slash* (Double Hit).
     * **Backend Mage:** High Attack. Special: *DDoS Blast* (Massive Dmg + Recoil).
     * **DevOps Paladin:** High Defense. Special: *Container Shield* (Damage + Heal).
-    * **Full Stack Sorcerer:** Balanced Stats.
 * **Strategic Combat:**
     * **Speed Mechanic:** Faster characters attack first and crit more often.
     * **Cooldown Management:** Tactical use of Heals and Special Abilities.
@@ -63,10 +63,10 @@ To run locally, follow these steps:
 
 ## Roadmap (Coming Soon)
 
-* [ ] Floating Damage Numbers
-* [ ] Retro Sound Effects (8-bit sfx)
-* [ ] Win Streaks & High Scores
-* [ ] Multiplayer Mode (WebSockets)
+* [ ] **Daily Challenges:** Face off against a "Boss of the Day" (e.g., Linus Torvalds or Dan Abramov) with boosted stats.
+* [ ] **Inventory & Loot:** Earn "Commit Shards" to buy cosmetic skins or temporary stat buffs.
+* [ ] **Guilds (Organizations):** Group players by GitHub Organizations to compete for team-based rankings.
+* [ ] **Replay System:** Share a unique URL so others can watch a play-by-play of your best battles.
 
 ## Contributing
 
