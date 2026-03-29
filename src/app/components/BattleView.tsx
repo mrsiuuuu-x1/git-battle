@@ -4,7 +4,7 @@ import { saveBattleResult, sendBattleMove, notifyOpponentLeft } from "../actions
 import { useEffect, useState, useRef } from "react";
 import { playSound } from "../lib/sounds";
 import { Character } from "../lib/github";
-import { BattleState, initializeBattle, performPlayerTurn, performOpponentTurn } from "../lib/gameEngine";
+import { BattleState, initializeBattle, performPlayerTurn, performOpponentTurn, getManaBarColor, canUseAbility } from "../lib/gameEngine";
 import { PixelShield, PixelSword, PixelCrossedSwords } from "./PixelIcons";
 import DamageNumber from "./DamageNumber";
 import { pusherClient } from "../lib/pusher";
@@ -230,11 +230,8 @@ export default function BattleView({
   };
 
   const healsLeft = 3 - battleState.playerHealsUsed;
-  
-  let healButtonText = "MERGE SHIELD";
-  if (healsLeft <= 0) healButtonText = "EMPTY";
-  else if (battleState.playerHealCd > 0) healButtonText = `WAIT (${battleState.playerHealCd})`;
-  else healButtonText = `SHIELD (${healsLeft})`;
+  const canSpecial = canUseAbility(battleState, "special");
+  const canHeal = canUseAbility(battleState, "heal");
 
   return (
     <div className="w-full min-h-screen bg-gradient-to-br from-[#667eea] to-[#764ba2] font-mono flex flex-col items-center py-10 relative overflow-hidden">
@@ -290,13 +287,29 @@ export default function BattleView({
                 <span>{battleState.playerHp}/{battleState.playerMaxHp}</span>
               </div>
               <div className="w-full h-6 bg-black/50 border-2 border-black relative">
-                <div 
+                <div
                   className="h-full transition-all duration-500"
-                  style={{ 
+                  style={{
                     width: `${(battleState.playerHp / battleState.playerMaxHp) * 100}%`,
-                    background: battleState.playerHp < (battleState.playerMaxHp * 0.3) 
-                      ? 'linear-gradient(90deg, #ff6b6b, #c92a2a)' 
-                      : 'linear-gradient(90deg, #4ecdc4, #44a39b)' 
+                    background: battleState.playerHp < (battleState.playerMaxHp * 0.3)
+                      ? 'linear-gradient(90deg, #ff6b6b, #c92a2a)'
+                      : 'linear-gradient(90deg, #4ecdc4, #44a39b)'
+                  }}
+                />
+              </div>
+            </div>
+            {/* MANA BAR */}
+            <div className="w-full mt-2">
+              <div className="text-[10px] text-white mb-1 flex justify-between">
+                <span>⚡ MANA</span>
+                <span>{battleState.playerMana}/{battleState.playerMaxMana}</span>
+              </div>
+              <div className="w-full h-4 bg-black/50 border-2 border-black relative">
+                <div
+                  className="h-full transition-all duration-500"
+                  style={{
+                    width: `${(battleState.playerMana / battleState.playerMaxMana) * 100}%`,
+                    background: getManaBarColor(battleState.playerMana, battleState.playerMaxMana)
                   }}
                 />
               </div>
@@ -329,13 +342,29 @@ export default function BattleView({
                 <span>{battleState.opponentHp}/{battleState.opponentMaxHp}</span>
               </div>
               <div className="w-full h-6 bg-black/50 border-2 border-black relative">
-                <div 
+                <div
                   className="h-full transition-all duration-500"
-                  style={{ 
+                  style={{
                     width: `${(battleState.opponentHp / battleState.opponentMaxHp) * 100}%`,
-                    background: battleState.opponentHp < (battleState.opponentMaxHp * 0.3) 
-                      ? 'linear-gradient(90deg, #ff6b6b, #c92a2a)' 
-                      : 'linear-gradient(90deg, #ff9f43, #ee5253)' 
+                    background: battleState.opponentHp < (battleState.opponentMaxHp * 0.3)
+                      ? 'linear-gradient(90deg, #ff6b6b, #c92a2a)'
+                      : 'linear-gradient(90deg, #ff9f43, #ee5253)'
+                  }}
+                />
+              </div>
+            </div>
+            {/* MANA BAR */}
+            <div className="w-full mt-2">
+              <div className="text-[10px] text-white mb-1 flex justify-between">
+                <span>⚡ MANA</span>
+                <span>{battleState.opponentMana}/{battleState.opponentMaxMana}</span>
+              </div>
+              <div className="w-full h-4 bg-black/50 border-2 border-black relative">
+                <div
+                  className="h-full transition-all duration-500"
+                  style={{
+                    width: `${(battleState.opponentMana / battleState.opponentMaxMana) * 100}%`,
+                    background: getManaBarColor(battleState.opponentMana, battleState.opponentMaxMana)
                   }}
                 />
               </div>
@@ -380,34 +409,37 @@ export default function BattleView({
 
         <button
           onClick={() => handleAction("special")}
-          disabled={!battleState.isPlayerTurn || !!battleState.winner || battleState.playerSpecialCd > 0}
+          disabled={!battleState.isPlayerTurn || !!battleState.winner || !canSpecial}
           className={`retro-font text-white text-lg md:text-xl px-8 py-4 border-4 border-black pixel-shadow transition-all flex items-center gap-2
-            ${(!battleState.isPlayerTurn || battleState.playerSpecialCd > 0) 
+            ${(!battleState.isPlayerTurn || !canSpecial)
               ? "bg-gray-500 cursor-not-allowed opacity-70"
-              : "bg-[#845ec2] hover:-translate-y-1 hover:shadow-[6px_6px_0px_#000] hover:bg-purple-700 active:translate-y-1 active:shadow-none" 
+              : "bg-[#845ec2] hover:-translate-y-1 hover:shadow-[6px_6px_0px_#000] hover:bg-purple-700 active:translate-y-1 active:shadow-none"
             }`}
         >
-          <PixelSword className="w-6 h-6" /> 
+          <PixelSword className="w-6 h-6" />
           {player.class === "Frontend Warrior" ? "PIXEL SLASH" :
            player.class === "Backend Mage" ? "DDOS BLAST" :
-           player.class === "DevOps Paladin" ? "SHIELD BASH" :
-           "SPECIAL"} 
-           
-          {battleState.playerSpecialCd > 0 && ` (${battleState.playerSpecialCd})`}
+           player.class === "DevOps Paladin" ? "CONTAINER SHIELD" :
+           player.class === "Full Stack Sorcerer" ? "CODE FUSION" :
+           player.class === "Open Source Legend" ? "COMMUNITY STRIKE" :
+           "SPECIAL"}
+          <span className="text-xs opacity-70">(25⚡)</span>
+          {battleState.playerSpecialCd > 0 && <span className="text-xs">({battleState.playerSpecialCd})</span>}
         </button>
 
         <button
           onClick={() => handleAction("heal")}
-          disabled={!battleState.isPlayerTurn || !!battleState.winner || battleState.playerHealCd > 0 || battleState.playerHealsUsed >= 3}
+          disabled={!battleState.isPlayerTurn || !!battleState.winner || !canHeal}
           className={`retro-font text-white text-lg md:text-xl px-8 py-4 border-4 border-black pixel-shadow transition-all flex items-center gap-2
-            ${(!battleState.isPlayerTurn || battleState.playerHealCd > 0 || battleState.playerHealsUsed >= 3)
-              ? "bg-gray-500 cursor-not-allowed opacity-70" 
+            ${(!battleState.isPlayerTurn || !canHeal)
+              ? "bg-gray-500 cursor-not-allowed opacity-70"
               : "bg-[#4ecdc4] hover:-translate-y-1 hover:shadow-[6px_6px_0px_#000] hover:bg-cyan-700 active:translate-y-1 active:shadow-none"
             }`}
         >
           <PixelShield className="w-6 h-6" />
-          {battleState.playerHealsUsed >= 3 ? "EMPTY" : "HEAL"}
-          {battleState.playerHealCd > 0 && battleState.playerHealsUsed < 3 && `(${battleState.playerHealCd})`}
+          {battleState.playerHealsUsed >= 3 ? "EMPTY" : `HEAL (${healsLeft})`}
+          <span className="text-xs opacity-70">(15⚡)</span>
+          {battleState.playerHealCd > 0 && battleState.playerHealsUsed < 3 && <span className="text-xs">({battleState.playerHealCd})</span>}
         </button>
       </div>
 
