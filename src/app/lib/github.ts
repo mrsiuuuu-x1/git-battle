@@ -197,12 +197,12 @@ function calculateEnhancedStats(metadata: any, characterClass: string) {
     organizations
   } = metadata;
 
-  // Enhanced stat calculation based on PRD formulas
-  let hp = totalCommits * 10 + (yearsActive * 100);
+  // Scaled stat calculation
+  let hp = Math.min(500, totalCommits * 0.5 + (yearsActive * 20));
   let attack = Math.floor(totalStars / 10) + (getLanguageBonus(characterClass) * 5);
   let defense = Math.floor(followers / 5) + (organizations * 10);
   let speed = (totalCommits / (yearsActive * 365)) * 20 + (contributionStreak * 2);
-  let mana = mergedPRs * 3 + Math.floor(totalCommits / 10);
+  let mana = Math.min(150, mergedPRs * 3 + Math.floor(totalCommits / 10));
   const critRate = Math.min(0.5, codeReviews / 100);
 
   // Class-specific bonuses (enhanced)
@@ -217,7 +217,7 @@ function calculateEnhancedStats(metadata: any, characterClass: string) {
       break;
     case "DevOps Paladin":
       defense += 15;
-      hp += 50;
+      hp += 30;
       break;
     case "Full Stack Sorcerer":
       speed += 5;
@@ -226,7 +226,7 @@ function calculateEnhancedStats(metadata: any, characterClass: string) {
       mana += 5;
       break;
     case "Open Source Legend":
-      hp += 100;
+      hp += 50;
       attack += 10;
       speed += 10;
       mana += 15;
@@ -236,7 +236,7 @@ function calculateEnhancedStats(metadata: any, characterClass: string) {
       break;
   }
 
-  hp = Math.max(100, Math.floor(hp));
+  hp = Math.min(600, Math.max(200, Math.floor(hp)));
   attack = Math.max(10, Math.floor(attack));
   defense = Math.max(5, Math.floor(defense));
   speed = Math.max(10, Math.floor(speed));
