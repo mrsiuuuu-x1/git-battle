@@ -1,6 +1,6 @@
 "use client";
 
-import { saveBattleResult, sendBattleMove, notifyOpponentLeft } from "../actions"; 
+import { saveBattleResult, sendBattleMove, notifyOpponentLeft, getBattleHistory } from "../actions"; 
 import { useEffect, useState, useRef } from "react";
 import { playSound } from "../lib/sounds";
 import { Character } from "../lib/github";
@@ -40,6 +40,7 @@ export default function BattleView({
 
   const [p1Anim, setP1Anim] = useState("");
   const [p2Anim, setP2Anim] = useState("");
+  const [winStreak, setWinStreak] = useState(0);
 
 
   // Check for Winner
@@ -55,7 +56,11 @@ export default function BattleView({
         player.avatar,
         battleState.winner === "player" ? "WIN" : "LOSS",
         opponent.username
-      );
+      ).then(() => {
+        getBattleHistory(player.username).then((data) => {
+          setWinStreak(data.streak);
+        });
+      });
     }
   }, [battleState?.winner]);
 
@@ -330,7 +335,7 @@ export default function BattleView({
               alt={opponent.username}
               className="w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-black mb-4 bg-white"
             />
-            <h2 className="text-lg md:text-xl text-white mb-2">{opponent.username}</h2>
+            <a href={`https://github.com/${opponent.username}`} target="_blank" rel="noopener noreferrer" className="text-lg md:text-xl text-white mb-2 hover:text-[#4ecdc4] underline">{opponent.username}</a>
             <span className="bg-[#ffd700] text-black text-[10px] px-2 py-1 border-2 border-black mb-4">
               {opponent.class}
             </span>
@@ -500,9 +505,20 @@ export default function BattleView({
               {battleState.winner === "player" ? "VICTORY! 🏆" : "GAME OVER 💀"}
             </h2>
             
-            <p className="text-xl mb-8 retro-font">
+            <p className="text-xl mb-4 retro-font">
               {battleState.winner === "player" ? "You defeated the enemy!" : "You were defeated..."}
             </p>
+
+            {winStreak > 1 && battleState.winner === "player" && (
+              <p className="text-lg mb-4 retro-font text-[#845ec2] animate-pulse">
+                {winStreak} WIN STREAK!
+              </p>
+            )}
+            {winStreak === 0 && battleState.winner !== "player" && (
+              <p className="text-sm mb-4 retro-font opacity-70">
+                Streak broken...
+              </p>
+            )}
             
             <div className="flex flex-col gap-4">
                 <button 

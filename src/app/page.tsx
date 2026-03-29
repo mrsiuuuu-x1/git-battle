@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from "react";
 import { useSession, signIn, signOut } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation"; 
-import { getLeaderboard, createRoom, getPublicRooms } from "./actions"; 
+import { getLeaderboard, getBattleHistory, createRoom, getPublicRooms } from "./actions"; 
 import BattleView from "./components/BattleView";
 import { getCharacterProfile, Character } from "./lib/github";
 import { PixelSword, PixelShield } from "./components/PixelIcons";
@@ -15,7 +15,7 @@ function HomeContent() {
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [loadingGame, setLoadingGame] = useState(false);
-  const [menuStep, setMenuStep] = useState<"menu" | "difficulty" | "leaderboard" | "multiplayer">("menu");
+  const [menuStep, setMenuStep] = useState<"menu" | "difficulty" | "leaderboard" | "multiplayer" | "history">("menu");
   const [difficulty, setDifficulty] = useState<"easy" | "medium" | "hard">("medium");
   const [playerData, setPlayerData] = useState<Character | null>(null);
   const [opponentData, setOpponentData] = useState<Character | null>(null);
@@ -26,6 +26,8 @@ function HomeContent() {
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [publicRooms, setPublicRooms] = useState<any[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [battleHistory, setBattleHistory] = useState<{ battles: any[]; wins: number; losses: number; streak: number }>({ battles: [], wins: 0, losses: 0, streak: 0 });
   const [errorMsg, setErrorMsg] = useState("");
 
   // Check URL for ?mode=multiplayer
@@ -39,6 +41,15 @@ function HomeContent() {
     const data = await getLeaderboard();
     setLeaderboard(data);
     setMenuStep("leaderboard");
+  };
+
+  const handleShowHistory = async () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const username = (session?.user as any)?.username || session?.user?.name;
+    if (!username) return;
+    const data = await getBattleHistory(username);
+    setBattleHistory(data);
+    setMenuStep("history");
   };
 
   const refreshLobby = async () => {
@@ -168,7 +179,14 @@ function HomeContent() {
                        LEADERBOARD
                     </button>
 
-                    <button 
+                    <button
+                      onClick={handleShowHistory}
+                      className="w-full bg-[#4ecdc4] border-4 border-black cursor-pointer text-black retro-font py-4 text-xl hover:bg-teal-400 hover:-translate-y-1 hover:shadow-[4px_4px_0_#000] transition-all flex justify-center items-center gap-2"
+                    >
+                       BATTLE HISTORY
+                    </button>
+
+                    <button
                         onClick={() => setMenuStep("multiplayer")}
                         className="w-full bg-[#845ec2] cursor-pointer border-4 border-black text-white retro-font py-4 text-xl hover:bg-purple-600 hover:-translate-y-1 hover:shadow-[4px_4px_0_#000] transition-all flex justify-center items-center gap-2"
                         >
@@ -221,7 +239,7 @@ function HomeContent() {
                       <div className="flex items-center gap-3">
                         <span className="text-[#fcee09] retro-font">#{index + 1}</span>
                         <img src={player.avatar} alt="avatar" className="w-8 h-8 border-2 border-white rounded-full bg-white" />
-                        <span className="text-white retro-font text-sm">{player.username}</span>
+                        <a href={`https://github.com/${player.username}`} target="_blank" rel="noopener noreferrer" className="text-white retro-font text-sm hover:text-[#4ecdc4] underline">{player.username}</a>
                       </div>
                       <div className="text-right">
                         <span className="text-[#4ecdc4] retro-font text-xs block">{player.wins} WINS</span>
@@ -238,6 +256,50 @@ function HomeContent() {
                 ← BACK TO MENU
               </button>
             </div>
+            )}
+
+            {menuStep === "history" && (
+              <div className="w-full max-w-md flex flex-col gap-4 animate-in slide-in-from-right duration-300">
+                <h2 className="retro-font text-xl text-center text-[#4ecdc4] mb-2">BATTLE HISTORY</h2>
+
+                {/* Stats Summary */}
+                <div className="flex justify-center gap-6 retro-font text-sm">
+                  <span className="text-[#4ecdc4]">{battleHistory.wins} WINS</span>
+                  <span className="text-[#ff6b6b]">{battleHistory.losses} LOSSES</span>
+                  {battleHistory.streak > 0 && (
+                    <span className="text-[#ffd700]">{battleHistory.streak} STREAK</span>
+                  )}
+                </div>
+
+                <div className="bg-black/40 border-4 border-black p-4 max-h-72 overflow-y-auto">
+                  {battleHistory.battles.length === 0 ? (
+                    <p className="text-white retro-font text-center">NO BATTLES YET...</p>
+                  ) : (
+                    battleHistory.battles.map((battle, index) => (
+                      <div key={index} className="flex items-center justify-between border-b-2 border-gray-700 py-2 last:border-0">
+                        <div className="flex items-center gap-3">
+                          <span className={`retro-font text-xs px-2 py-1 border-2 border-black ${battle.winner === "player" ? "bg-[#4ecdc4] text-black" : "bg-[#ff6b6b] text-white"}`}>
+                            {battle.winner === "player" ? "WIN" : "LOSS"}
+                          </span>
+                          <span className="text-white retro-font text-xs">vs</span>
+                          <a href={`https://github.com/${battle.opponent}`} target="_blank" rel="noopener noreferrer" className="text-white retro-font text-sm hover:text-[#4ecdc4] underline">
+                            {battle.opponent}
+                          </a>
+                        </div>
+                        <span className="text-gray-500 retro-font text-[10px]">
+                          {new Date(battle.createdAt).toLocaleDateString()}
+                        </span>
+                      </div>
+                    ))
+                  )}
+                </div>
+                <button
+                  onClick={() => setMenuStep("menu")}
+                  className="text-gray-400 retro-font text-xs hover:text-white underline mt-2 text-center cursor-pointer"
+                >
+                  ← BACK TO MENU
+                </button>
+              </div>
             )}
 
             {menuStep === "multiplayer" && (

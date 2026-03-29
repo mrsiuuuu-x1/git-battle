@@ -57,6 +57,48 @@ export async function saveBattleResult(
     }
 }
 
+// fetch battle history for a user
+export async function getBattleHistory(username: string) {
+    try {
+        const user = await prisma.user.findUnique({
+            where: { username },
+            select: { id: true, wins: true, losses: true }
+        });
+        if (!user) return { battles: [], wins: 0, losses: 0, streak: 0 };
+
+        const battles = await prisma.battle.findMany({
+            where: { playerId: user.id },
+            orderBy: { createdAt: 'desc' },
+            take: 20,
+            select: {
+                opponent: true,
+                winner: true,
+                createdAt: true,
+            }
+        });
+
+        // Calculate current streak
+        let streak = 0;
+        for (const battle of battles) {
+            if (battle.winner === "player") {
+                streak++;
+            } else {
+                break;
+            }
+        }
+
+        return {
+            battles,
+            wins: user.wins,
+            losses: user.losses,
+            streak
+        };
+    } catch (error) {
+        console.error("failed to fetch battle history:", error);
+        return { battles: [], wins: 0, losses: 0, streak: 0 };
+    }
+}
+
 // fetch top 10 players by wins
 export async function getLeaderboard() {
     try {
