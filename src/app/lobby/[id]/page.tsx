@@ -18,7 +18,8 @@ export default async function LobbyPage({ params }: PageProps) {
   const resolvedParams = await params;
   const roomId = resolvedParams.id;
   
-  const username = session.user.name;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const username = (session.user as any)?.username || session.user.name;
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   let myCharacter: any = null;
