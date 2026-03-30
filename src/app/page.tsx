@@ -3,7 +3,8 @@
 import { useState, useEffect, Suspense } from "react";
 import { useSession, signIn, signOut } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation"; 
-import { getLeaderboard, getBattleHistory, createRoom, getPublicRooms } from "./actions"; 
+import { getLeaderboard, getBattleHistory, getUserAchievements, createRoom, getPublicRooms } from "./actions";
+import { ACHIEVEMENTS } from "./lib/achievements"; 
 import BattleView from "./components/BattleView";
 import { getCharacterProfile, Character } from "./lib/github";
 import { PixelSword, PixelShield } from "./components/PixelIcons";
@@ -15,7 +16,7 @@ function HomeContent() {
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [loadingGame, setLoadingGame] = useState(false);
-  const [menuStep, setMenuStep] = useState<"menu" | "difficulty" | "leaderboard" | "multiplayer" | "history">("menu");
+  const [menuStep, setMenuStep] = useState<"menu" | "difficulty" | "leaderboard" | "multiplayer" | "history" | "achievements">("menu");
   const [difficulty, setDifficulty] = useState<"easy" | "medium" | "hard">("medium");
   const [playerData, setPlayerData] = useState<Character | null>(null);
   const [opponentData, setOpponentData] = useState<Character | null>(null);
@@ -28,6 +29,7 @@ function HomeContent() {
   const [publicRooms, setPublicRooms] = useState<any[]>([]);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [battleHistory, setBattleHistory] = useState<{ battles: any[]; wins: number; losses: number; streak: number }>({ battles: [], wins: 0, losses: 0, streak: 0 });
+  const [earnedAchievements, setEarnedAchievements] = useState<string[]>([]);
   const [errorMsg, setErrorMsg] = useState("");
 
   // Check URL for ?mode=multiplayer
@@ -50,6 +52,15 @@ function HomeContent() {
     const data = await getBattleHistory(username);
     setBattleHistory(data);
     setMenuStep("history");
+  };
+
+  const handleShowAchievements = async () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const username = (session?.user as any)?.username || session?.user?.name;
+    if (!username) return;
+    const data = await getUserAchievements(username);
+    setEarnedAchievements(data.map(a => a.key));
+    setMenuStep("achievements");
   };
 
   const refreshLobby = async () => {
@@ -187,6 +198,13 @@ function HomeContent() {
                     </button>
 
                     <button
+                      onClick={handleShowAchievements}
+                      className="w-full bg-[#ff9f43] border-4 border-black cursor-pointer text-black retro-font py-4 text-xl hover:bg-orange-400 hover:-translate-y-1 hover:shadow-[4px_4px_0_#000] transition-all flex justify-center items-center gap-2"
+                    >
+                       ACHIEVEMENTS
+                    </button>
+
+                    <button
                         onClick={() => setMenuStep("multiplayer")}
                         className="w-full bg-[#845ec2] cursor-pointer border-4 border-black text-white retro-font py-4 text-xl hover:bg-purple-600 hover:-translate-y-1 hover:shadow-[4px_4px_0_#000] transition-all flex justify-center items-center gap-2"
                         >
@@ -292,6 +310,51 @@ function HomeContent() {
                       </div>
                     ))
                   )}
+                </div>
+                <button
+                  onClick={() => setMenuStep("menu")}
+                  className="text-gray-400 retro-font text-xs hover:text-white underline mt-2 text-center cursor-pointer"
+                >
+                  ← BACK TO MENU
+                </button>
+              </div>
+            )}
+
+            {menuStep === "achievements" && (
+              <div className="w-full max-w-lg flex flex-col gap-4 animate-in slide-in-from-right duration-300">
+                <h2 className="retro-font text-xl text-center text-[#ff9f43] mb-2">ACHIEVEMENTS</h2>
+                <p className="retro-font text-xs text-center text-gray-400 mb-2">
+                  {earnedAchievements.length}/{ACHIEVEMENTS.length} UNLOCKED
+                </p>
+                <div className="grid grid-cols-2 gap-3">
+                  {ACHIEVEMENTS.map((achievement) => {
+                    const unlocked = earnedAchievements.includes(achievement.key);
+                    return (
+                      <div
+                        key={achievement.key}
+                        className={`border-4 border-black p-3 text-center transition-all ${
+                          unlocked
+                            ? "bg-[#ffd700]/20 shadow-[4px_4px_0px_rgba(0,0,0,0.3)]"
+                            : "bg-black/40 opacity-50"
+                        }`}
+                      >
+                        <div className="text-2xl mb-1">{unlocked ? achievement.icon : "🔒"}</div>
+                        <div className={`retro-font text-xs mb-1 ${unlocked ? "text-[#ffd700]" : "text-gray-500"}`}>
+                          {achievement.name}
+                        </div>
+                        <div className="retro-font text-[9px] text-gray-400">
+                          {achievement.description}
+                        </div>
+                        <div className={`retro-font text-[8px] mt-1 px-1 py-0.5 border border-black inline-block ${
+                          achievement.category === "battle" ? "bg-[#ff6b6b]/30 text-[#ff6b6b]" :
+                          achievement.category === "github" ? "bg-[#4ecdc4]/30 text-[#4ecdc4]" :
+                          "bg-[#845ec2]/30 text-[#845ec2]"
+                        }`}>
+                          {achievement.category.toUpperCase()}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
                 <button
                   onClick={() => setMenuStep("menu")}

@@ -1,6 +1,7 @@
 "use client";
 
-import { saveBattleResult, sendBattleMove, notifyOpponentLeft, getBattleHistory } from "../actions"; 
+import { saveBattleResult, sendBattleMove, notifyOpponentLeft, getBattleHistory } from "../actions";
+import { getAchievementDef } from "../lib/achievements"; 
 import { useEffect, useState, useRef } from "react";
 import { playSound } from "../lib/sounds";
 import { Character } from "../lib/github";
@@ -41,6 +42,7 @@ export default function BattleView({
   const [p1Anim, setP1Anim] = useState("");
   const [p2Anim, setP2Anim] = useState("");
   const [winStreak, setWinStreak] = useState(0);
+  const [achievementToast, setAchievementToast] = useState<string | null>(null);
 
 
   // Check for Winner
@@ -56,10 +58,19 @@ export default function BattleView({
         player.avatar,
         battleState.winner === "player" ? "WIN" : "LOSS",
         opponent.username
-      ).then(() => {
+      ).then((result) => {
         getBattleHistory(player.username).then((data) => {
           setWinStreak(data.streak);
         });
+
+        // Show achievement toast if any were unlocked
+        if (result?.newAchievements && result.newAchievements.length > 0) {
+          const def = getAchievementDef(result.newAchievements[0]);
+          if (def) {
+            setAchievementToast(`${def.icon} ${def.name}`);
+            setTimeout(() => setAchievementToast(null), 4000);
+          }
+        }
       });
     }
   }, [battleState?.winner]);
@@ -252,6 +263,13 @@ export default function BattleView({
         ))}
       </div>
       
+      {/* ACHIEVEMENT TOAST */}
+      {achievementToast && (
+        <div className="absolute top-6 left-1/2 -translate-x-1/2 z-50 bg-[#ffd700] border-4 border-black px-6 py-3 retro-font text-black text-sm shadow-[4px_4px_0px_rgba(0,0,0,0.5)] animate-in slide-in-from-top duration-300">
+          ACHIEVEMENT UNLOCKED: {achievementToast}
+        </div>
+      )}
+
       {/* EXIT BUTTON */}
       <button
         onClick={() => setShowExitConfirm(true)}

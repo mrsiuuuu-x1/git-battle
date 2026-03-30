@@ -2,6 +2,7 @@
 import { pusherServer } from "./lib/pusher";
 import { getCharacterProfile } from "./lib/github";
 import { prisma } from "./lib/prisma";
+import { ACHIEVEMENTS } from "./lib/achievements";
 
 function generateRoomCode() {
     const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -13,7 +14,80 @@ function generateRoomCode() {
 }
 
 export async function fetchUserStats(username: string) {
-    return await getCharacterProfile(username);
+    const profile = await getCharacterProfile(username);
+    if (profile) {
+        await checkAndGrantAchievements(username, {
+            totalCommits: profile.metadata.totalCommits,
+            totalStars: profile.metadata.totalStars,
+            mergedPRs: profile.metadata.mergedPRs,
+            contributionStreak: profile.metadata.contributionStreak,
+            organizations: profile.metadata.organizations,
+        });
+    }
+    return profile;
+}
+
+interface AchievementContext {
+    wins?: number;
+    currentStreak?: number;
+    totalCommits?: number;
+    totalStars?: number;
+    mergedPRs?: number;
+    contributionStreak?: number;
+    organizations?: number;
+}
+
+async function checkAndGrantAchievements(username: string, context: AchievementContext): Promise<string[]> {
+    try {
+        const user = await prisma.user.findUnique({
+            where: { username },
+            select: { id: true, achievements: { select: { key: true } } }
+        });
+        if (!user) return [];
+
+        const earned = new Set(user.achievements.map(a => a.key));
+
+        const conditions: Record<string, boolean> = {
+            FIRST_BLOOD:    (context.wins ?? 0) >= 1,
+            UNSTOPPABLE:    (context.currentStreak ?? 0) >= 10,
+            LEGEND:         (context.wins ?? 0) >= 100,
+            COMMIT_MASTER:  (context.totalCommits ?? 0) >= 1000,
+            STAR_COLLECTOR: (context.totalStars ?? 0) >= 100,
+            COLLAB_KING:    (context.mergedPRs ?? 0) >= 50,
+            STREAK_WARRIOR: (context.contributionStreak ?? 0) >= 7,
+            OPEN_SOURCE:    (context.organizations ?? 0) >= 3,
+        };
+
+        const newlyUnlocked: string[] = [];
+
+        for (const def of ACHIEVEMENTS) {
+            if (earned.has(def.key)) continue;
+            if (!conditions[def.key]) continue;
+
+            await prisma.achievement.create({
+                data: { userId: user.id, key: def.key }
+            });
+            newlyUnlocked.push(def.key);
+        }
+
+        return newlyUnlocked;
+    } catch (error) {
+        console.error("Achievement check failed:", error);
+        return [];
+    }
+}
+
+export async function getUserAchievements(username: string) {
+    try {
+        const user = await prisma.user.findUnique({
+            where: { username },
+            select: { achievements: { select: { key: true, unlockedAt: true } } }
+        });
+        return user?.achievements ?? [];
+    } catch (error) {
+        console.error("Failed to fetch achievements:", error);
+        return [];
+    }
 }
 
 export async function saveBattleResult(
@@ -48,8 +122,26 @@ export async function saveBattleResult(
             }
         });
 
+        // Check battle achievements
+        const battles = await prisma.battle.findMany({
+            where: { playerId: user.id },
+            orderBy: { createdAt: 'desc' },
+            take: 10,
+            select: { winner: true }
+        });
+        let streak = 0;
+        for (const b of battles) {
+            if (b.winner === "player") streak++; else break;
+        }
+
+        const updatedWins = user.wins + (result === "WIN" ? 1 : 0);
+        const newAchievements = await checkAndGrantAchievements(username, {
+            wins: updatedWins,
+            currentStreak: result === "WIN" ? streak : 0,
+        });
+
         console.log(`saved battle for ${username}: ${result}`);
-        return { success: true };
+        return { success: true, newAchievements };
 
     } catch (error) {
         console.error("failed to save battle:", error);
