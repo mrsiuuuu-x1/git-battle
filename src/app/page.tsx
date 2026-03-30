@@ -256,20 +256,19 @@ function HomeContent() {
                   leaderboard.map((player, index) => {
                     const tier = getTier(player.wins);
                     return (
-                      <div key={player.username} className="flex items-center justify-between border-b-2 border-gray-700 py-2 last:border-0">
-                        <div className="flex items-center gap-3">
-                          <span className="text-[#fcee09] retro-font">#{index + 1}</span>
-                          <img src={player.avatar} alt="avatar" className="w-8 h-8 border-2 border-white rounded-full bg-white" />
-                          <a href={`https://github.com/${player.username}`} target="_blank" rel="noopener noreferrer" className="text-white retro-font text-sm hover:text-[#4ecdc4] underline">{player.username}</a>
+                      <div key={player.username} className="flex items-center justify-between border-b-2 border-gray-700 py-2 last:border-0 gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="text-[#fcee09] retro-font shrink-0">#{index + 1}</span>
+                          <img src={player.avatar} alt="avatar" className="w-8 h-8 border-2 border-white rounded-full bg-white shrink-0" />
+                          <a href={`https://github.com/${player.username}`} target="_blank" rel="noopener noreferrer" className="text-white retro-font text-xs hover:text-[#4ecdc4] underline truncate">{player.username}</a>
                         </div>
-                        <div className="text-right flex items-center gap-2">
-                          <span className="retro-font text-[10px] px-1.5 py-0.5 border border-black flex items-center gap-1" style={{ color: tier.color, backgroundColor: tier.bgColor }}>
-                            <img src={tier.image} alt={tier.name} className="w-4 h-4 inline-block" style={{ filter: `drop-shadow(0 0 2px ${tier.color})` }} />
-                            {tier.name}
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="retro-font text-[10px] px-1 py-0.5 border border-black whitespace-nowrap" style={{ color: tier.color, backgroundColor: tier.bgColor }}>
+                            {tier.icon} {tier.name}
                           </span>
-                          <div>
-                            <span className="text-[#4ecdc4] retro-font text-xs block">{player.wins} WINS</span>
-                            <span className="text-gray-500 retro-font text-[10px] block">{player.losses} LOSSES</span>
+                          <div className="text-right">
+                            <span className="text-[#4ecdc4] retro-font text-xs block">{player.wins}W</span>
+                            <span className="text-gray-500 retro-font text-[10px] block">{player.losses}L</span>
                           </div>
                         </div>
                       </div>
