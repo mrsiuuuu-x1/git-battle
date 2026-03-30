@@ -7,12 +7,12 @@ export interface TierDef {
 }
 
 export const TIERS: TierDef[] = [
-  { name: "Bronze",   icon: "🥉", minWins: 0,    color: "#cd7f32", bgColor: "rgba(205,127,50,0.2)" },
-  { name: "Silver",   icon: "🥈", minWins: 101,  color: "#c0c0c0", bgColor: "rgba(192,192,192,0.2)" },
-  { name: "Gold",     icon: "🥇", minWins: 301,  color: "#ffd700", bgColor: "rgba(255,215,0,0.2)" },
-  { name: "Platinum", icon: "💎", minWins: 601,  color: "#e5e4e2", bgColor: "rgba(229,228,226,0.25)" },
-  { name: "Diamond",  icon: "💠", minWins: 1001, color: "#b9f2ff", bgColor: "rgba(185,242,255,0.2)" },
-  { name: "Master",   icon: "👑", minWins: 2001, color: "#ff4500", bgColor: "rgba(255,69,0,0.2)" },
+  { name: "Background NPC",    icon: "👤", minWins: 0,    color: "#8b8b8b", bgColor: "rgba(139,139,139,0.2)" },
+  { name: "Side Character",    icon: "🗡️", minWins: 51,  color: "#c0c0c0", bgColor: "rgba(192,192,192,0.2)" },
+  { name: "Supporting Role",   icon: "⚔️", minWins: 131,  color: "#ffd700", bgColor: "rgba(255,215,0,0.2)" },
+  { name: "Main Character",    icon: "🌟", minWins: 451,  color: "#e5e4e2", bgColor: "rgba(229,228,226,0.25)" },
+  { name: "Protagonist",       icon: "💫", minWins: 1001, color: "#b9f2ff", bgColor: "rgba(185,242,255,0.2)" },
+  { name: "Final Boss",        icon: "👑", minWins: 2001, color: "#ff4500", bgColor: "rgba(255,69,0,0.2)" },
 ];
 
 export function getTier(wins: number): TierDef {
