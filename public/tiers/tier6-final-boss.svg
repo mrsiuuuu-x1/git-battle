@@ -1,0 +1,43 @@
+<svg width="290" height="110" viewBox="0 0 290 110" xmlns="http://www.w3.org/2000/svg">
+  <style>.px { shape-rendering: crispEdges; }</style>
+  <rect x="0" y="0" width="290" height="110" rx="10" fill="#1a0800" stroke="#ff4500" stroke-width="2"/>
+  <rect x="10" y="10" width="270" height="90" rx="6" fill="#0d0400"/>
+  <!-- aura tendrils -->
+  <rect class="px" x="38" y="12" width="4" height="18" fill="#ff4500" opacity="0.3"/>
+  <rect class="px" x="46" y="10" width="4" height="14" fill="#cc3700" opacity="0.25"/>
+  <rect class="px" x="74" y="12" width="4" height="16" fill="#ff4500" opacity="0.3"/>
+  <rect class="px" x="82" y="10" width="4" height="12" fill="#cc3700" opacity="0.2"/>
+  <!-- horns -->
+  <rect class="px" x="51" y="14" width="4" height="12" fill="#ff4500"/>
+  <rect class="px" x="47" y="14" width="4" height="8" fill="#cc3700"/>
+  <rect class="px" x="73" y="14" width="4" height="12" fill="#ff4500"/>
+  <rect class="px" x="77" y="14" width="4" height="8" fill="#cc3700"/>
+  <!-- crown -->
+  <rect class="px" x="49" y="22" width="22" height="4" fill="#ff4500"/>
+  <rect class="px" x="51" y="18" width="4" height="4" fill="#ff6600"/>
+  <rect class="px" x="58" y="16" width="4" height="6" fill="#ff6600"/>
+  <rect class="px" x="65" y="18" width="4" height="4" fill="#ff6600"/>
+  <!-- head -->
+  <rect class="px" x="51" y="26" width="18" height="14" fill="#8b1a00"/>
+  <!-- glowing eyes -->
+  <rect class="px" x="53" y="30" width="5" height="4" fill="#ff4500"/>
+  <rect class="px" x="61" y="30" width="5" height="4" fill="#ff4500"/>
+  <!-- massive body -->
+  <rect class="px" x="45" y="40" width="30" height="18" fill="#8b1a00"/>
+  <rect class="px" x="47" y="42" width="26" height="14" fill="#6b1200"/>
+  <!-- shoulder pads -->
+  <rect class="px" x="37" y="38" width="10" height="10" fill="#cc3700"/>
+  <rect class="px" x="73" y="38" width="10" height="10" fill="#cc3700"/>
+  <!-- arms -->
+  <rect class="px" x="35" y="48" width="12" height="8" fill="#6b1200"/>
+  <rect class="px" x="73" y="48" width="12" height="8" fill="#6b1200"/>
+  <!-- fists -->
+  <rect class="px" x="31" y="46" width="6" height="6" fill="#ff4500"/>
+  <rect class="px" x="83" y="46" width="6" height="6" fill="#ff4500"/>
+  <!-- legs -->
+  <rect class="px" x="47" y="58" width="10" height="10" fill="#3d0a00"/>
+  <rect class="px" x="63" y="58" width="10" height="10" fill="#3d0a00"/>
+  <text font-family="monospace" font-size="10" font-weight="bold" fill="#ff4500" x="110" y="34">TIER 6</text>
+  <text font-family="monospace" font-size="15" font-weight="bold" fill="#ff8c66" x="110" y="54">Final Boss</text>
+  <text font-family="monospace" font-size="9" fill="#cc3700" x="110" y="72">&#x1F451;  2001+ wins</text>
+</svg>

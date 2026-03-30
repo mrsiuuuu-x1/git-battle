@@ -8,6 +8,8 @@ import { Character } from "../lib/github";
 import { BattleState, initializeBattle, performPlayerTurn, performOpponentTurn, getManaBarColor, canUseAbility } from "../lib/gameEngine";
 import { PixelShield, PixelSword, PixelCrossedSwords } from "./PixelIcons";
 import DamageNumber from "./DamageNumber";
+import RankUpAnimation from "./RankUpAnimation";
+import { getTier, TierDef } from "../lib/tiers";
 import { pusherClient } from "../lib/pusher";
 
 interface BattleViewProps {
@@ -43,6 +45,7 @@ export default function BattleView({
   const [p2Anim, setP2Anim] = useState("");
   const [winStreak, setWinStreak] = useState(0);
   const [achievementToast, setAchievementToast] = useState<string | null>(null);
+  const [rankUp, setRankUp] = useState<{ oldTier: TierDef; newTier: TierDef } | null>(null);
 
 
   // Check for Winner
@@ -61,6 +64,15 @@ export default function BattleView({
       ).then((result) => {
         getBattleHistory(player.username).then((data) => {
           setWinStreak(data.streak);
+
+          // Check for tier rank-up on win
+          if (battleState.winner === "player") {
+            const oldTier = getTier(data.wins - 1);
+            const newTier = getTier(data.wins);
+            if (newTier.minWins > oldTier.minWins) {
+              setRankUp({ oldTier, newTier });
+            }
+          }
         });
 
         // Show achievement toast if any were unlocked
@@ -522,7 +534,15 @@ export default function BattleView({
       )}
 
       {/* GAME OVER MODAL */}
-      {battleState.winner && (
+      {rankUp && (
+        <RankUpAnimation
+          oldTier={rankUp.oldTier}
+          newTier={rankUp.newTier}
+          onComplete={() => setRankUp(null)}
+        />
+      )}
+
+      {battleState.winner && !rankUp && (
         <div className="absolute inset-0 bg-black/80 flex items-center justify-center z-50 animate-in fade-in duration-500">
           <div className={`border-8 p-8 text-center pixel-shadow 
             ${battleState.winner === "player" ? "bg-[#ffd700] border-white text-black" : "bg-[#ff6b6b] border-white text-white"}`}

@@ -1,0 +1,28 @@
+<svg width="290" height="110" viewBox="0 0 290 110" xmlns="http://www.w3.org/2000/svg">
+  <style>.px { shape-rendering: crispEdges; }</style>
+  <rect x="0" y="0" width="290" height="110" rx="10" fill="#1a1500" stroke="#ffd700" stroke-width="1"/>
+  <rect x="10" y="10" width="270" height="90" rx="6" fill="#0e0b00"/>
+  <!-- head -->
+  <rect class="px" x="52" y="18" width="12" height="12" fill="#ffd700"/>
+  <!-- hair spikes -->
+  <rect class="px" x="52" y="14" width="4" height="6" fill="#ffb300"/>
+  <rect class="px" x="58" y="12" width="4" height="8" fill="#ffb300"/>
+  <!-- body -->
+  <rect class="px" x="50" y="30" width="16" height="14" fill="#c8a000"/>
+  <!-- cape -->
+  <rect class="px" x="62" y="30" width="10" height="18" fill="#a07800"/>
+  <rect class="px" x="64" y="46" width="6" height="4" fill="#856400"/>
+  <!-- arm raised -->
+  <rect class="px" x="40" y="30" width="10" height="4" fill="#c8a000"/>
+  <rect class="px" x="36" y="26" width="6" height="4" fill="#ffd700"/>
+  <!-- legs -->
+  <rect class="px" x="50" y="44" width="6" height="10" fill="#856400"/>
+  <rect class="px" x="60" y="44" width="4" height="10" fill="#856400"/>
+  <!-- star -->
+  <rect class="px" x="86" y="30" width="4" height="4" fill="#ffd700"/>
+  <rect class="px" x="82" y="34" width="12" height="4" fill="#ffd700"/>
+  <rect class="px" x="86" y="38" width="4" height="4" fill="#ffd700"/>
+  <text font-family="monospace" font-size="10" font-weight="bold" fill="#ffd700" x="110" y="30">TIER 3</text>
+  <text font-family="monospace" font-size="15" font-weight="bold" fill="#ffe566" x="110" y="50">Supporting Role</text>
+  <text font-family="monospace" font-size="9" fill="#a07800" x="110" y="68">&#x2694;&#xFE0F;  131+ wins</text>
+</svg>

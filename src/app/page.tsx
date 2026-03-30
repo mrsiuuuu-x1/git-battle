@@ -263,7 +263,10 @@ function HomeContent() {
                           <a href={`https://github.com/${player.username}`} target="_blank" rel="noopener noreferrer" className="text-white retro-font text-sm hover:text-[#4ecdc4] underline">{player.username}</a>
                         </div>
                         <div className="text-right flex items-center gap-2">
-                          <span className="retro-font text-[10px] px-1.5 py-0.5 border border-black" style={{ color: tier.color, backgroundColor: tier.bgColor }}>{tier.icon} {tier.name}</span>
+                          <span className="retro-font text-[10px] px-1.5 py-0.5 border border-black flex items-center gap-1" style={{ color: tier.color, backgroundColor: tier.bgColor }}>
+                            <img src={tier.image} alt={tier.name} className="w-4 h-4 inline-block" style={{ filter: `drop-shadow(0 0 2px ${tier.color})` }} />
+                            {tier.name}
+                          </span>
                           <div>
                             <span className="text-[#4ecdc4] retro-font text-xs block">{player.wins} WINS</span>
                             <span className="text-gray-500 retro-font text-[10px] block">{player.losses} LOSSES</span>
@@ -300,9 +303,15 @@ function HomeContent() {
                         )}
                       </div>
                       <div className="flex items-center gap-2 retro-font text-xs">
-                        <span style={{ color: current.color }}>{current.icon} {current.name}</span>
+                        <span className="flex items-center gap-1" style={{ color: current.color }}>
+                          <img src={current.image} alt={current.name} className="w-5 h-5 inline-block" />
+                          {current.name}
+                        </span>
                         {next && (
-                          <span className="text-gray-500">→ {winsToNext} wins to {next.icon} {next.name}</span>
+                          <span className="text-gray-500 flex items-center gap-1">→ {winsToNext} wins to
+                            <img src={next.image} alt={next.name} className="w-4 h-4 inline-block opacity-60" />
+                            {next.name}
+                          </span>
                         )}
                       </div>
                       {next && (
