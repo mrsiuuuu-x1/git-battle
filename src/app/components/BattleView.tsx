@@ -120,6 +120,10 @@ export default function BattleView({
           const newPlayerHp = Math.max(0, prev.playerHp - (data.damage || 0));
           const newOpponentHp = Math.min(prev.opponentMaxHp, prev.opponentHp + (data.heal || 0));
 
+          // Mana: apply opponent's actual mana from their state, regen player mana per turn
+          const newOpponentMana = data.attackerMana !== undefined ? data.attackerMana : prev.opponentMana;
+          const newPlayerMana = Math.min(prev.playerMaxMana, prev.playerMana + 5);
+
           if ((data.damage || 0) > 0) {
               spawnNumber(`-${data.damage}`, "player", "damage");
               playSound("damage");
@@ -131,17 +135,19 @@ export default function BattleView({
               spawnNumber(`+${data.heal}`, "opponent", "heal");
               playSound("heal");
           }
-          
+
           const winner = newPlayerHp <= 0 ? "opponent" : null;
 
           return {
                 ...prev,
                 playerHp: newPlayerHp,
                 opponentHp: newOpponentHp,
+                playerMana: newPlayerMana,
+                opponentMana: newOpponentMana,
                 playerHealCd: newHealCd,
                 playerSpecialCd: newSpecialCd,
                 logs: [data.logMessage, ...prev.logs],
-                isPlayerTurn: true, 
+                isPlayerTurn: true,
                 winner: winner,
             };
           });
@@ -237,6 +243,7 @@ export default function BattleView({
                 attacker: player.username,
                 damage: dmgDealt,
                 heal: healed,
+                attackerMana: newState.playerMana,
                 logMessage: newState.logs[0]
             });
         } catch (error) {
