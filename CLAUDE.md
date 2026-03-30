@@ -18,7 +18,7 @@ Git Battle is a turn-based RPG where GitHub profiles are converted into RPG char
 
 ### Core Data Flow
 
-1. **GitHub profile fetch** (`src/app/lib/github.ts`) - Calls GitHub REST API (via axios, no auth token), analyzes repos/languages/activity, determines a character class (Frontend Warrior, Backend Mage, DevOps Paladin, Full Stack Sorcerer, Open Source Legend, Code Apprentice), and computes RPG stats (HP, attack, defense, speed, mana, critRate).
+1. **GitHub profile fetch** (`src/app/lib/github.ts`) - Calls GitHub REST API (via axios, no auth token), analyzes repos/languages/activity, determines a character class (Frontend Warrior, Backend Mage, DevOps Paladin, Full-Stack Samurai, Open-Source Wizard, Code Apprentice), and computes RPG stats (HP, attack, defense, speed, mana, critRate).
 
 2. **Battle engine** (`src/app/lib/gameEngine.ts`) - Pure functions, no side effects. `initializeBattle` creates state, `performPlayerTurn` handles player actions (attack/heal/special), `performOpponentTurn` runs AI logic. Each class has a unique special ability with different damage multipliers and effects. Mana system gates special (25 mana) and heal (15 mana) actions.
 

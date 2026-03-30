@@ -4,7 +4,8 @@ import { useState, useEffect, Suspense } from "react";
 import { useSession, signIn, signOut } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation"; 
 import { getLeaderboard, getBattleHistory, getUserAchievements, createRoom, getPublicRooms } from "./actions";
-import { ACHIEVEMENTS } from "./lib/achievements"; 
+import { ACHIEVEMENTS } from "./lib/achievements";
+import { getTier, getTierProgress } from "./lib/tiers";
 import BattleView from "./components/BattleView";
 import { getCharacterProfile, Character } from "./lib/github";
 import { PixelSword, PixelShield } from "./components/PixelIcons";
@@ -252,19 +253,25 @@ function HomeContent() {
                 {leaderboard.length === 0 ? (
                   <p className="text-white retro-font text-center">NO LEGENDS YET...</p>
                 ) : (
-                  leaderboard.map((player, index) => (
-                    <div key={player.username} className="flex items-center justify-between border-b-2 border-gray-700 py-2 last:border-0">
-                      <div className="flex items-center gap-3">
-                        <span className="text-[#fcee09] retro-font">#{index + 1}</span>
-                        <img src={player.avatar} alt="avatar" className="w-8 h-8 border-2 border-white rounded-full bg-white" />
-                        <a href={`https://github.com/${player.username}`} target="_blank" rel="noopener noreferrer" className="text-white retro-font text-sm hover:text-[#4ecdc4] underline">{player.username}</a>
+                  leaderboard.map((player, index) => {
+                    const tier = getTier(player.wins);
+                    return (
+                      <div key={player.username} className="flex items-center justify-between border-b-2 border-gray-700 py-2 last:border-0">
+                        <div className="flex items-center gap-3">
+                          <span className="text-[#fcee09] retro-font">#{index + 1}</span>
+                          <img src={player.avatar} alt="avatar" className="w-8 h-8 border-2 border-white rounded-full bg-white" />
+                          <a href={`https://github.com/${player.username}`} target="_blank" rel="noopener noreferrer" className="text-white retro-font text-sm hover:text-[#4ecdc4] underline">{player.username}</a>
+                        </div>
+                        <div className="text-right flex items-center gap-2">
+                          <span className="retro-font text-[10px] px-1.5 py-0.5 border border-black" style={{ color: tier.color, backgroundColor: tier.bgColor }}>{tier.icon} {tier.name}</span>
+                          <div>
+                            <span className="text-[#4ecdc4] retro-font text-xs block">{player.wins} WINS</span>
+                            <span className="text-gray-500 retro-font text-[10px] block">{player.losses} LOSSES</span>
+                          </div>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <span className="text-[#4ecdc4] retro-font text-xs block">{player.wins} WINS</span>
-                        <span className="text-gray-500 retro-font text-[10px] block">{player.losses} LOSSES</span>
-                      </div>
-                    </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
               <button
@@ -280,14 +287,32 @@ function HomeContent() {
               <div className="w-full max-w-md flex flex-col gap-4 animate-in slide-in-from-right duration-300">
                 <h2 className="retro-font text-xl text-center text-[#4ecdc4] mb-2">BATTLE HISTORY</h2>
 
-                {/* Stats Summary */}
-                <div className="flex justify-center gap-6 retro-font text-sm">
-                  <span className="text-[#4ecdc4]">{battleHistory.wins} WINS</span>
-                  <span className="text-[#ff6b6b]">{battleHistory.losses} LOSSES</span>
-                  {battleHistory.streak > 0 && (
-                    <span className="text-[#ffd700]">{battleHistory.streak} STREAK</span>
-                  )}
-                </div>
+                {/* Stats Summary with Tier */}
+                {(() => {
+                  const { current, next, progress, winsToNext } = getTierProgress(battleHistory.wins);
+                  return (
+                    <div className="flex flex-col items-center gap-2">
+                      <div className="flex justify-center gap-6 retro-font text-sm">
+                        <span className="text-[#4ecdc4]">{battleHistory.wins} WINS</span>
+                        <span className="text-[#ff6b6b]">{battleHistory.losses} LOSSES</span>
+                        {battleHistory.streak > 0 && (
+                          <span className="text-[#ffd700]">{battleHistory.streak} STREAK</span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 retro-font text-xs">
+                        <span style={{ color: current.color }}>{current.icon} {current.name}</span>
+                        {next && (
+                          <span className="text-gray-500">→ {winsToNext} wins to {next.icon} {next.name}</span>
+                        )}
+                      </div>
+                      {next && (
+                        <div className="w-full max-w-xs h-2 bg-black/40 border border-gray-600 overflow-hidden">
+                          <div className="h-full transition-all" style={{ width: `${progress}%`, backgroundColor: current.color }} />
+                        </div>
+                      )}
+                    </div>
+                  );
+                })()}
 
                 <div className="bg-black/40 border-4 border-black p-4 max-h-72 overflow-y-auto">
                   {battleHistory.battles.length === 0 ? (

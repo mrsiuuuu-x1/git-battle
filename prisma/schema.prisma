@@ -48,10 +48,17 @@ model Battle {
 model Room {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())
-  
+
   host      String
   guest     String?
-  
+
   status    String   @default("WAITING")
   isPrivate Boolean  @default(false)
+}
+
+model StatsCache {
+  id        String   @id @default(cuid())
+  username  String   @unique
+  data      Json
+  fetchedAt DateTime @default(now())
 }

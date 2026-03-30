@@ -13,7 +13,31 @@ function generateRoomCode() {
     return result;
 }
 
-export async function fetchUserStats(username: string) {
+const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+export async function fetchUserStats(username: string, forceRefresh = false) {
+    // Check cache first
+    if (!forceRefresh) {
+        try {
+            const cached = await prisma.statsCache.findUnique({ where: { username } });
+            if (cached && (Date.now() - cached.fetchedAt.getTime()) < CACHE_TTL_MS) {
+                const profile = cached.data as unknown as ReturnType<typeof getCharacterProfile> extends Promise<infer T> ? T : never;
+                if (profile) {
+                    await checkAndGrantAchievements(username, {
+                        totalCommits: profile.metadata.totalCommits,
+                        totalStars: profile.metadata.totalStars,
+                        mergedPRs: profile.metadata.mergedPRs,
+                        contributionStreak: profile.metadata.contributionStreak,
+                        organizations: profile.metadata.organizations,
+                    });
+                }
+                return profile;
+            }
+        } catch {
+            // Cache miss or error, proceed to fetch
+        }
+    }
+
     const profile = await getCharacterProfile(username);
     if (profile) {
         await checkAndGrantAchievements(username, {
@@ -23,6 +47,17 @@ export async function fetchUserStats(username: string) {
             contributionStreak: profile.metadata.contributionStreak,
             organizations: profile.metadata.organizations,
         });
+
+        // Save to cache
+        try {
+            await prisma.statsCache.upsert({
+                where: { username },
+                update: { data: profile as object, fetchedAt: new Date() },
+                create: { username, data: profile as object },
+            });
+        } catch {
+            // Cache write failure is non-critical
+        }
     }
     return profile;
 }

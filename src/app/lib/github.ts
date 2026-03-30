@@ -170,7 +170,7 @@ function determineCharacterClass(metadata: any, reposData: GitHubRepoData[]): st
   
   // Advanced class determination logic
   if (totalStars > 500 && publicRepos > 50 && mergedPRs > 100) {
-    return "Open Source Legend";
+    return "Open-Source Wizard";
   } else if (languageStats.frontend > languageStats.backend && languageStats.frontend > languageStats.devops) {
     return "Frontend Warrior";
   } else if (languageStats.backend > languageStats.frontend && languageStats.backend > languageStats.devops) {
@@ -178,7 +178,7 @@ function determineCharacterClass(metadata: any, reposData: GitHubRepoData[]): st
   } else if (languageStats.devops > 3 || topLanguage === 'Shell') {
     return "DevOps Paladin";
   } else if (totalLanguageRepos > 10 && Math.abs(languageStats.frontend - languageStats.backend) <= 2) {
-    return "Full Stack Sorcerer";
+    return "Full-Stack Samurai";
   } else {
     return "Code Apprentice";
   }
@@ -219,13 +219,13 @@ function calculateEnhancedStats(metadata: any, characterClass: string) {
       defense += 15;
       hp += 30;
       break;
-    case "Full Stack Sorcerer":
+    case "Full-Stack Samurai":
       speed += 5;
       attack += 5;
       defense += 5;
       mana += 5;
       break;
-    case "Open Source Legend":
+    case "Open-Source Wizard":
       hp += 50;
       attack += 10;
       speed += 10;
@@ -257,8 +257,8 @@ function getLanguageBonus(characterClass: string): number {
     case "Frontend Warrior": return 3;
     case "Backend Mage": return 4;
     case "DevOps Paladin": return 2;
-    case "Full Stack Sorcerer": return 3;
-    case "Open Source Legend": return 5;
+    case "Full-Stack Samurai": return 3;
+    case "Open-Source Wizard": return 5;
     default: return 1;
   }
 }
@@ -278,8 +278,8 @@ function getClassDescription(characterClass: string): string {
     "Frontend Warrior": "Masters of user interfaces, wielding HTML, CSS, and JavaScript with deadly precision.",
     "Backend Mage": "Conjures powerful server-side spells and database magic from the shadows.",
     "DevOps Paladin": "Guardian of infrastructure, protecting systems with containers and pipelines.",
-    "Full Stack Sorcerer": "Jack of all trades, weaving spells across the entire technology stack.",
-    "Open Source Legend": "Legendary contributor whose code echoes across countless repositories.",
+    "Full-Stack Samurai": "Jack of all trades, weaving spells across the entire technology stack.",
+    "Open-Source Wizard": "Legendary contributor whose code echoes across countless repositories.",
     "Code Apprentice": "Just beginning their journey, but showing great potential.",
   };
   return descriptions[characterClass] || descriptions["Code Apprentice"];
@@ -290,8 +290,8 @@ function getSpecialAbility(characterClass: string): string {
     "Frontend Warrior": "Pixel Slash - Delivers rapid double strikes with UI precision",
     "Backend Mage": "Server Storm - Massive damage with system recoil",
     "DevOps Paladin": "Container Shield - Damages opponent while healing self",
-    "Full Stack Sorcerer": "Code Fusion - Balanced attack with multiple effects",
-    "Open Source Legend": "Community Strike - Damage scales with contribution history",
+    "Full-Stack Samurai": "Code Fusion - Balanced attack with multiple effects",
+    "Open-Source Wizard": "Community Strike - Damage scales with contribution history",
     "Code Apprentice": "Debug Burst - Simple but effective debugging attack",
   };
   return abilities[characterClass] || abilities["Code Apprentice"];
@@ -302,8 +302,8 @@ function getClassStrengths(characterClass: string): string[] {
     "Frontend Warrior": ["High Speed", "Critical Hit Bonus", "UI Mastery"],
     "Backend Mage": ["Massive Attack", "High Mana", "System Knowledge"],
     "DevOps Paladin": ["Strong Defense", "High HP", "Infrastructure Skills"],
-    "Full Stack Sorcerer": ["Balanced Stats", "Versatile Skills", "Adaptability"],
-    "Open Source Legend": ["All-around Excellence", "Community Power", "Legendary Status"],
+    "Full-Stack Samurai": ["Balanced Stats", "Versatile Skills", "Adaptability"],
+    "Open-Source Wizard": ["All-around Excellence", "Community Power", "Legendary Status"],
     "Code Apprentice": ["Growth Potential", "Eager to Learn", "Fresh Perspective"],
   };
   return strengths[characterClass] || strengths["Code Apprentice"];

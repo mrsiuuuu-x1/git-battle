@@ -126,13 +126,13 @@ export function performPlayerTurn(
       newState.playerHp = Math.min(newState.playerMaxHp, newState.playerHp + heal);
       newState.logs = [...newState.logs, `CONTAINER SHIELD! 🛡️ ${hit.damage} DMG (${MANA_COST_SPECIAL}⚡)`, `You healed ${heal} HP.`];
 
-    } else if (userClass === "Full Stack Sorcerer") {
+    } else if (userClass === "Full-Stack Samurai") {
       const hit = getHitDamage(player, opponent, 1.3);
       newState.opponentHp = Math.max(0, newState.opponentHp - hit.damage);
       newState.playerMana = Math.min(newState.playerMaxMana, newState.playerMana + 10);
       newState.logs = [...newState.logs, `CODE FUSION! 🔮 ${hit.damage} DMG + 10 mana restored (${MANA_COST_SPECIAL}⚡)`];
 
-    } else if (userClass === "Open Source Legend") {
+    } else if (userClass === "Open-Source Wizard") {
       const communityMultiplier = 1.5 + (player.metadata?.totalStars || 0) / 1000;
       const hit = getHitDamage(player, opponent, communityMultiplier);
       newState.opponentHp = Math.max(0, newState.opponentHp - hit.damage);

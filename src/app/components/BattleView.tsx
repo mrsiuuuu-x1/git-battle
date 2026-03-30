@@ -250,7 +250,7 @@ export default function BattleView({
   const canHeal = canUseAbility(battleState, "heal");
 
   return (
-    <div className="w-full min-h-screen bg-gradient-to-br from-[#667eea] to-[#764ba2] font-mono flex flex-col items-center py-10 relative overflow-hidden">
+    <div className="w-full min-h-screen bg-gradient-to-br from-[#667eea] to-[#764ba2] font-mono flex flex-col items-center py-4 md:py-10 relative overflow-hidden">
       
       {/* RENDER DAMAGE LAYERS */}
       <div className="absolute inset-0 pointer-events-none z-50">
@@ -279,37 +279,37 @@ export default function BattleView({
       </button>
 
       {/* HEADER */}
-      <div className="flex justify-center items-center gap-7 mb-10">
-        <PixelCrossedSwords className="w-16 h-16 md:h-16 text-[#fcee09] animate-pulse"/>
-        <h1 className="retro-font text-3xl md:text-5xl text-white text-center drop-shadow-[4px_4px_0_rgba(0,0,0,0.5)]">
+      <div className="flex justify-center items-center gap-3 md:gap-7 mb-4 md:mb-10">
+        <PixelCrossedSwords className="w-8 h-8 md:w-16 md:h-16 text-[#fcee09] animate-pulse"/>
+        <h1 className="retro-font text-2xl md:text-5xl text-white text-center drop-shadow-[4px_4px_0_rgba(0,0,0,0.5)]">
           GIT BATTLE
         </h1>
-        <PixelCrossedSwords className="w-16 h-16 md:h-16 text-[#fcee09] animate-pulse" />
+        <PixelCrossedSwords className="w-8 h-8 md:w-16 md:h-16 text-[#fcee09] animate-pulse" />
       </div>
       
 
-      <div className="w-full max-w-6xl flex flex-col md:flex-row justify-between items-center px-4 gap-8">
-        
+      <div className="w-full max-w-6xl flex flex-col md:flex-row justify-between items-center px-2 md:px-4 gap-4 md:gap-8">
+
         {/* PLAYER 1 CARD */}
-        <div className={`retro-font w-full md:w-1/3 bg-white/10 border-4 border-black p-6 shadow-[8px_8px_0px_rgba(0,0,0,0.3)] relative transition-transform ${p1Anim === "attacking" ? "attacking-right" : ""} ${p1Anim === "damaged" ? "damaged bg-red-500/30" : ""}`}>
+        <div className={`retro-font w-full md:w-1/3 bg-white/10 border-4 border-black p-3 md:p-6 shadow-[8px_8px_0px_rgba(0,0,0,0.3)] relative transition-transform ${p1Anim === "attacking" ? "attacking-right" : ""} ${p1Anim === "damaged" ? "damaged bg-red-500/30" : ""}`}>
           <div className="flex flex-col items-center">
-            <img 
-              src={player.avatar} 
+            <img
+              src={player.avatar}
               alt={player.username}
-              className="w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-black mb-4 bg-white"
+              className="w-16 h-16 md:w-32 md:h-32 rounded-full border-4 border-black mb-2 md:mb-4 bg-white"
             />
-            <h2 className="text-lg md:text-xl text-white mb-2">{player.username}</h2>
-            <span className="bg-[#ffd700] text-black text-[10px] px-2 py-1 border-2 border-black mb-4">
+            <h2 className="text-sm md:text-xl text-white mb-1 md:mb-2">{player.username}</h2>
+            <span className="bg-[#ffd700] text-black text-[8px] md:text-[10px] px-2 py-1 border-2 border-black mb-2 md:mb-4">
               {player.class}
             </span>
-            
+
             {/* HP BAR */}
             <div className="w-full">
-              <div className="text-[10px] text-white mb-1 flex justify-between">
+              <div className="text-[8px] md:text-[10px] text-white mb-1 flex justify-between">
                 <span>HP</span>
                 <span>{battleState.playerHp}/{battleState.playerMaxHp}</span>
               </div>
-              <div className="w-full h-6 bg-black/50 border-2 border-black relative">
+              <div className="w-full h-4 md:h-6 bg-black/50 border-2 border-black relative">
                 <div
                   className="h-full transition-all duration-500"
                   style={{
@@ -322,12 +322,12 @@ export default function BattleView({
               </div>
             </div>
             {/* MANA BAR */}
-            <div className="w-full mt-2">
-              <div className="text-[10px] text-white mb-1 flex justify-between">
+            <div className="w-full mt-1 md:mt-2">
+              <div className="text-[8px] md:text-[10px] text-white mb-1 flex justify-between">
                 <span>⚡ MANA</span>
                 <span>{battleState.playerMana}/{battleState.playerMaxMana}</span>
               </div>
-              <div className="w-full h-4 bg-black/50 border-2 border-black relative">
+              <div className="w-full h-3 md:h-4 bg-black/50 border-2 border-black relative">
                 <div
                   className="h-full transition-all duration-500"
                   style={{
@@ -341,30 +341,30 @@ export default function BattleView({
         </div>
 
         {/* VS TEXT */}
-        <div className="retro-font text-5xl text-white drop-shadow-[6px_6px_0px_rgba(0,0,0,0.5)] animate-pulse">
+        <div className="retro-font text-3xl md:text-5xl text-white drop-shadow-[6px_6px_0px_rgba(0,0,0,0.5)] animate-pulse">
           VS
         </div>
 
         {/* PLAYER 2 CARD */}
-        <div className={`retro-font w-full md:w-1/3 bg-white/10 border-4 border-black p-6 shadow-[8px_8px_0px_rgba(0,0,0,0.3)] relative transition-transform ${p2Anim === "attacking" ? "attacking-left" : ""} ${p2Anim === "damaged" ? "damaged bg-red-500/30" : ""}`}>
+        <div className={`retro-font w-full md:w-1/3 bg-white/10 border-4 border-black p-3 md:p-6 shadow-[8px_8px_0px_rgba(0,0,0,0.3)] relative transition-transform ${p2Anim === "attacking" ? "attacking-left" : ""} ${p2Anim === "damaged" ? "damaged bg-red-500/30" : ""}`}>
           <div className="flex flex-col items-center">
-            <img 
-              src={opponent.avatar} 
+            <img
+              src={opponent.avatar}
               alt={opponent.username}
-              className="w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-black mb-4 bg-white"
+              className="w-16 h-16 md:w-32 md:h-32 rounded-full border-4 border-black mb-2 md:mb-4 bg-white"
             />
-            <a href={`https://github.com/${opponent.username}`} target="_blank" rel="noopener noreferrer" className="text-lg md:text-xl text-white mb-2 hover:text-[#4ecdc4] underline">{opponent.username}</a>
-            <span className="bg-[#ffd700] text-black text-[10px] px-2 py-1 border-2 border-black mb-4">
+            <a href={`https://github.com/${opponent.username}`} target="_blank" rel="noopener noreferrer" className="text-sm md:text-xl text-white mb-1 md:mb-2 hover:text-[#4ecdc4] underline">{opponent.username}</a>
+            <span className="bg-[#ffd700] text-black text-[8px] md:text-[10px] px-2 py-1 border-2 border-black mb-2 md:mb-4">
               {opponent.class}
             </span>
-            
+
             {/* HP BAR */}
             <div className="w-full">
-              <div className="text-[10px] text-white mb-1 flex justify-between">
+              <div className="text-[8px] md:text-[10px] text-white mb-1 flex justify-between">
                 <span>HP</span>
                 <span>{battleState.opponentHp}/{battleState.opponentMaxHp}</span>
               </div>
-              <div className="w-full h-6 bg-black/50 border-2 border-black relative">
+              <div className="w-full h-4 md:h-6 bg-black/50 border-2 border-black relative">
                 <div
                   className="h-full transition-all duration-500"
                   style={{
@@ -377,12 +377,12 @@ export default function BattleView({
               </div>
             </div>
             {/* MANA BAR */}
-            <div className="w-full mt-2">
-              <div className="text-[10px] text-white mb-1 flex justify-between">
+            <div className="w-full mt-1 md:mt-2">
+              <div className="text-[8px] md:text-[10px] text-white mb-1 flex justify-between">
                 <span>⚡ MANA</span>
                 <span>{battleState.opponentMana}/{battleState.opponentMaxMana}</span>
               </div>
-              <div className="w-full h-4 bg-black/50 border-2 border-black relative">
+              <div className="w-full h-3 md:h-4 bg-black/50 border-2 border-black relative">
                 <div
                   className="h-full transition-all duration-500"
                   style={{
@@ -398,8 +398,8 @@ export default function BattleView({
       </div>
 
       {/* LOGS */}
-      <div className="w-full max-w-4xl px-4 mt-8">
-        <div ref={scrollRef} className="retro-font text-xs bg-black/40 border-4 border-black p-4 h-40 overflow-y-auto shadow-inner space-y-2">
+      <div className="w-full max-w-4xl px-2 md:px-4 mt-4 md:mt-8">
+        <div ref={scrollRef} className="retro-font text-[10px] md:text-xs bg-black/40 border-4 border-black p-2 md:p-4 h-28 md:h-40 overflow-y-auto shadow-inner space-y-1 md:space-y-2">
           {battleState.logs.map((log, i) => {
             let logStyle = "border-[#ffd700] text-gray-300";
             if (log.includes("hits") || log.includes("DMG")) {
@@ -421,48 +421,49 @@ export default function BattleView({
       </div>
 
       {/* CONTROLS */}
-      <div className="mt-8 flex flex-wrap justify-center gap-4 w-full max-w-2xl">
+      <div className="mt-4 md:mt-8 flex flex-wrap justify-center gap-2 md:gap-4 w-full max-w-2xl px-2">
         <button
           onClick={() => handleAction("attack")}
           disabled={!battleState.isPlayerTurn || !!battleState.winner}
-          className="retro-font bg-[#ff6b6b] text-white text-lg md:text-xl px-8 py-4 border-4 border-black pixel-shadow hover:-translate-y-1 hover:shadow-[6px_6px_0px_#000] hover:bg-red-700 active:translate-y-1 active:shadow-none transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          className="retro-font bg-[#ff6b6b] text-white text-xs md:text-xl px-4 md:px-8 py-3 md:py-4 border-4 border-black pixel-shadow hover:-translate-y-1 hover:shadow-[6px_6px_0px_#000] hover:bg-red-700 active:translate-y-1 active:shadow-none transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 md:gap-2"
         >
-          <PixelSword className="w-6 h-6" /> ATTACK
+          <PixelSword className="w-4 h-4 md:w-6 md:h-6" /> ATTACK
         </button>
 
         <button
           onClick={() => handleAction("special")}
           disabled={!battleState.isPlayerTurn || !!battleState.winner || !canSpecial}
-          className={`retro-font text-white text-lg md:text-xl px-8 py-4 border-4 border-black pixel-shadow transition-all flex items-center gap-2
+          className={`retro-font text-white text-xs md:text-xl px-4 md:px-8 py-3 md:py-4 border-4 border-black pixel-shadow transition-all flex items-center gap-1 md:gap-2
             ${(!battleState.isPlayerTurn || !canSpecial)
               ? "bg-gray-500 cursor-not-allowed opacity-70"
               : "bg-[#845ec2] hover:-translate-y-1 hover:shadow-[6px_6px_0px_#000] hover:bg-purple-700 active:translate-y-1 active:shadow-none"
             }`}
         >
-          <PixelSword className="w-6 h-6" />
-          {player.class === "Frontend Warrior" ? "PIXEL SLASH" :
+          <PixelSword className="w-4 h-4 md:w-6 md:h-6" />
+          <span className="hidden sm:inline">{player.class === "Frontend Warrior" ? "PIXEL SLASH" :
            player.class === "Backend Mage" ? "DDOS BLAST" :
            player.class === "DevOps Paladin" ? "CONTAINER SHIELD" :
-           player.class === "Full Stack Sorcerer" ? "CODE FUSION" :
-           player.class === "Open Source Legend" ? "COMMUNITY STRIKE" :
-           "SPECIAL"}
-          <span className="text-xs opacity-70">(25⚡)</span>
-          {battleState.playerSpecialCd > 0 && <span className="text-xs">({battleState.playerSpecialCd})</span>}
+           player.class === "Full-Stack Samurai" ? "CODE FUSION" :
+           player.class === "Open-Source Wizard" ? "COMMUNITY STRIKE" :
+           "SPECIAL"}</span>
+          <span className="sm:hidden">SPECIAL</span>
+          <span className="text-[8px] md:text-xs opacity-70">(25⚡)</span>
+          {battleState.playerSpecialCd > 0 && <span className="text-[8px] md:text-xs">({battleState.playerSpecialCd})</span>}
         </button>
 
         <button
           onClick={() => handleAction("heal")}
           disabled={!battleState.isPlayerTurn || !!battleState.winner || !canHeal}
-          className={`retro-font text-white text-lg md:text-xl px-8 py-4 border-4 border-black pixel-shadow transition-all flex items-center gap-2
+          className={`retro-font text-white text-xs md:text-xl px-4 md:px-8 py-3 md:py-4 border-4 border-black pixel-shadow transition-all flex items-center gap-1 md:gap-2
             ${(!battleState.isPlayerTurn || !canHeal)
               ? "bg-gray-500 cursor-not-allowed opacity-70"
               : "bg-[#4ecdc4] hover:-translate-y-1 hover:shadow-[6px_6px_0px_#000] hover:bg-cyan-700 active:translate-y-1 active:shadow-none"
             }`}
         >
-          <PixelShield className="w-6 h-6" />
+          <PixelShield className="w-4 h-4 md:w-6 md:h-6" />
           {battleState.playerHealsUsed >= 3 ? "EMPTY" : `HEAL (${healsLeft})`}
-          <span className="text-xs opacity-70">(15⚡)</span>
-          {battleState.playerHealCd > 0 && battleState.playerHealsUsed < 3 && <span className="text-xs">({battleState.playerHealCd})</span>}
+          <span className="text-[8px] md:text-xs opacity-70">(15⚡)</span>
+          {battleState.playerHealCd > 0 && battleState.playerHealsUsed < 3 && <span className="text-[8px] md:text-xs">({battleState.playerHealCd})</span>}
         </button>
       </div>
 
@@ -519,11 +520,11 @@ export default function BattleView({
           <div className={`border-8 p-8 text-center pixel-shadow 
             ${battleState.winner === "player" ? "bg-[#ffd700] border-white text-black" : "bg-[#ff6b6b] border-white text-white"}`}
           >
-            <h2 className="text-4xl md:text-6xl mb-4 retro-font">
+            <h2 className="text-2xl md:text-6xl mb-4 retro-font">
               {battleState.winner === "player" ? "VICTORY! 🏆" : "GAME OVER 💀"}
             </h2>
-            
-            <p className="text-xl mb-4 retro-font">
+
+            <p className="text-sm md:text-xl mb-4 retro-font">
               {battleState.winner === "player" ? "You defeated the enemy!" : "You were defeated..."}
             </p>
 
