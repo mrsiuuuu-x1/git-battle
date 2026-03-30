@@ -35,9 +35,13 @@ export default async function LobbyPage({ params }: PageProps) {
       myCharacter = {
           username: username,
           avatar: session.user.image || "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png",
-          class: "Frontend Warrior",
-          level: 1,
-          stats: { hp: 100, attack: 15, defense: 5, speed: 10 }
+          class: "Code Apprentice",
+          stats: { hp: 200, attack: 15, defense: 5, speed: 10, mana: 30, critRate: 0.05 },
+          metadata: {
+              totalCommits: 0, totalStars: 0, followers: 0, publicRepos: 0,
+              yearsActive: 1, topLanguage: "JavaScript", contributionStreak: 0,
+              mergedPRs: 0, codeReviews: 0, organizations: 0,
+          },
       };
   }
 
