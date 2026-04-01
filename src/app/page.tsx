@@ -7,6 +7,7 @@ import { getLeaderboard, getBattleHistory, getUserAchievements, createRoom, getP
 import { ACHIEVEMENTS } from "./lib/achievements";
 import { getTier, getTierProgress } from "./lib/tiers";
 import BattleView from "./components/BattleView";
+import FriendsPanel from "./components/FriendsPanel";
 import { getCharacterProfile, Character } from "./lib/github";
 import { PixelSword, PixelShield } from "./components/PixelIcons";
 
@@ -17,7 +18,7 @@ function HomeContent() {
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [loadingGame, setLoadingGame] = useState(false);
-  const [menuStep, setMenuStep] = useState<"menu" | "difficulty" | "leaderboard" | "multiplayer" | "history" | "achievements">("menu");
+  const [menuStep, setMenuStep] = useState<"menu" | "difficulty" | "leaderboard" | "multiplayer" | "history" | "achievements" | "friends">("menu");
   const [difficulty, setDifficulty] = useState<"easy" | "medium" | "hard">("medium");
   const [playerData, setPlayerData] = useState<Character | null>(null);
   const [opponentData, setOpponentData] = useState<Character | null>(null);
@@ -203,6 +204,13 @@ function HomeContent() {
                       className="w-full bg-[#ff9f43] border-4 border-black cursor-pointer text-black retro-font py-4 text-xl hover:bg-orange-400 hover:-translate-y-1 hover:shadow-[4px_4px_0_#000] transition-all flex justify-center items-center gap-2"
                     >
                        ACHIEVEMENTS
+                    </button>
+
+                    <button
+                      onClick={() => setMenuStep("friends")}
+                      className="w-full bg-[#845ec2] border-4 border-black cursor-pointer text-white retro-font py-4 text-xl hover:bg-purple-600 hover:-translate-y-1 hover:shadow-[4px_4px_0_#000] transition-all flex justify-center items-center gap-2"
+                    >
+                       FRIENDS
                     </button>
 
                     <button
@@ -396,6 +404,14 @@ function HomeContent() {
                   ← BACK TO MENU
                 </button>
               </div>
+            )}
+
+            {menuStep === "friends" && (
+              <FriendsPanel
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                currentUsername={(session?.user as any)?.username || session?.user?.name || ""}
+                onBack={() => setMenuStep("menu")}
+              />
             )}
 
             {menuStep === "multiplayer" && (
