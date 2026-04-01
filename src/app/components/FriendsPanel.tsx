@@ -1,9 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { searchUsers, sendFriendRequest, respondToFriendRequest, removeFriend, getFriendsList, createRoom } from "../actions";
+import { searchUsers, sendFriendRequest, respondToFriendRequest, removeFriend, getFriendsList, createRoom, sendChallenge } from "../actions";
 import { getTier } from "../lib/tiers";
 import { useRouter } from "next/navigation";
+import { pusherClient } from "../lib/pusher";
 
 interface FriendEntry {
   friendshipId: string;
@@ -28,6 +29,7 @@ export default function FriendsPanel({ currentUsername, onBack }: FriendsPanelPr
   const [searchResults, setSearchResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const [challenge, setChallenge] = useState<{ from: string; roomId: string } | null>(null);
 
   const loadFriends = async () => {
     const data = await getFriendsList(currentUsername);
@@ -37,6 +39,19 @@ export default function FriendsPanel({ currentUsername, onBack }: FriendsPanelPr
 
   useEffect(() => {
     loadFriends();
+  }, [currentUsername]);
+
+  // Listen for incoming friend challenges
+  useEffect(() => {
+    const channel = pusherClient.subscribe(`user-${currentUsername}`);
+    channel.bind("friend-challenge", (data: { from: string; roomId: string }) => {
+      setChallenge(data);
+    });
+
+    return () => {
+      channel.unbind_all();
+      pusherClient.unsubscribe(`user-${currentUsername}`);
+    };
   }, [currentUsername]);
 
   const handleSearch = async () => {
@@ -75,7 +90,10 @@ export default function FriendsPanel({ currentUsername, onBack }: FriendsPanelPr
   const handleChallenge = async (friendUsername: string) => {
     const res = await createRoom(currentUsername, true);
     if (res.success && res.roomId) {
-      router.push(`/lobby/${res.roomId}?challenge=${friendUsername}`);
+      // Notify the friend about the challenge via Pusher
+      await sendChallenge(currentUsername, friendUsername, res.roomId);
+      // Navigate challenger to the lobby
+      router.push(`/lobby/${res.roomId}`);
     }
   };
 
@@ -88,6 +106,36 @@ export default function FriendsPanel({ currentUsername, onBack }: FriendsPanelPr
   return (
     <div className="w-full max-w-lg flex flex-col gap-4 animate-in slide-in-from-right duration-300">
       <h2 className="retro-font text-xl text-center text-[#845ec2] mb-2">FRIENDS</h2>
+
+      {/* Challenge Popup */}
+      {challenge && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 animate-in fade-in duration-200">
+          <div className="bg-white border-4 border-black p-8 text-center max-w-sm mx-4 relative shadow-[8px_8px_0_#000]">
+            <div className="absolute top-0 left-0 right-0 h-4 bg-[#845ec2] border-b-4 border-black"></div>
+            <h3 className="retro-font text-xl mb-2 text-[#845ec2] mt-4">CHALLENGE!</h3>
+            <p className="retro-font text-sm mb-6 text-black leading-relaxed">
+              <span className="text-[#ff6b6b] font-bold">{challenge.from}</span> wants to battle you!
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  router.push(`/lobby/${challenge.roomId}`);
+                  setChallenge(null);
+                }}
+                className="flex-1 bg-[#00e756] border-4 border-black p-3 retro-font text-black hover:bg-green-400 cursor-pointer"
+              >
+                ACCEPT
+              </button>
+              <button
+                onClick={() => setChallenge(null)}
+                className="flex-1 bg-gray-200 border-4 border-black p-3 retro-font text-black hover:bg-gray-300 cursor-pointer"
+              >
+                DECLINE
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="flex gap-1 w-full">

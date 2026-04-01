@@ -490,6 +490,19 @@ export async function removeFriend(friendshipId: string) {
     }
 }
 
+export async function sendChallenge(fromUsername: string, toUsername: string, roomId: string) {
+    try {
+        await pusherServer.trigger(`user-${toUsername}`, "friend-challenge", {
+            from: fromUsername,
+            roomId,
+        });
+        return { success: true };
+    } catch (error) {
+        console.error("Send challenge failed:", error);
+        return { success: false };
+    }
+}
+
 export async function getFriendsList(username: string) {
     try {
         const user = await prisma.user.findUnique({ where: { username }, select: { id: true } });

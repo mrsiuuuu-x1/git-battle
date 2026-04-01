@@ -10,6 +10,7 @@ import BattleView from "./components/BattleView";
 import FriendsPanel from "./components/FriendsPanel";
 import { getCharacterProfile, Character } from "./lib/github";
 import { PixelSword, PixelShield } from "./components/PixelIcons";
+import { pusherClient } from "./lib/pusher";
 
 function HomeContent() {
   const { data: session, status } = useSession();
@@ -33,6 +34,24 @@ function HomeContent() {
   const [battleHistory, setBattleHistory] = useState<{ battles: any[]; wins: number; losses: number; streak: number }>({ battles: [], wins: 0, losses: 0, streak: 0 });
   const [earnedAchievements, setEarnedAchievements] = useState<string[]>([]);
   const [errorMsg, setErrorMsg] = useState("");
+  const [challenge, setChallenge] = useState<{ from: string; roomId: string } | null>(null);
+
+  // Listen for friend challenges globally
+  useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const username = (session?.user as any)?.username || session?.user?.name;
+    if (!username) return;
+
+    const channel = pusherClient.subscribe(`user-${username}`);
+    channel.bind("friend-challenge", (data: { from: string; roomId: string }) => {
+      setChallenge(data);
+    });
+
+    return () => {
+      channel.unbind_all();
+      pusherClient.unsubscribe(`user-${username}`);
+    };
+  }, [session]);
 
   // Check URL for ?mode=multiplayer
   useEffect(() => {
@@ -529,6 +548,35 @@ function HomeContent() {
           </div>
         )}
       </div>
+
+      {challenge && menuStep !== "friends" && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 animate-in fade-in duration-200">
+          <div className="bg-white border-4 border-black p-8 text-center max-w-sm mx-4 relative shadow-[8px_8px_0_#000]">
+            <div className="absolute top-0 left-0 right-0 h-4 bg-[#845ec2] border-b-4 border-black"></div>
+            <h3 className="retro-font text-xl mb-2 text-[#845ec2] mt-4">CHALLENGE!</h3>
+            <p className="retro-font text-sm mb-6 text-black leading-relaxed">
+              <span className="text-[#ff6b6b] font-bold">{challenge.from}</span> wants to battle you!
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  router.push(`/lobby/${challenge.roomId}`);
+                  setChallenge(null);
+                }}
+                className="flex-1 bg-[#00e756] border-4 border-black p-3 retro-font text-black hover:bg-green-400 cursor-pointer"
+              >
+                ACCEPT
+              </button>
+              <button
+                onClick={() => setChallenge(null)}
+                className="flex-1 bg-gray-200 border-4 border-black p-3 retro-font text-black hover:bg-gray-300 cursor-pointer"
+              >
+                DECLINE
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {errorMsg && (
         <div className="absolute inset-0 bg-black/80 flex items-center justify-center z-50 animate-in fade-in duration-200">
