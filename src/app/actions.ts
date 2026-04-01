@@ -13,7 +13,7 @@ function generateRoomCode() {
     return result;
 }
 
-const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
 export async function fetchUserStats(username: string, forceRefresh = false) {
     // Check cache first
@@ -402,5 +402,133 @@ export async function notifyRematch(roomId: string) {
         return { success: true };
     } catch (error) {
         console.error("Error sending rematch:", error);
+    }
+}
+
+// ── Friend System ──
+
+export async function searchUsers(query: string, currentUsername: string) {
+    if (!query || query.length < 2) return [];
+    try {
+        const users = await prisma.user.findMany({
+            where: {
+                username: { contains: query, mode: "insensitive" },
+                NOT: { username: currentUsername },
+            },
+            take: 10,
+            select: { username: true, avatar: true, wins: true, losses: true },
+        });
+        return users;
+    } catch (error) {
+        console.error("User search failed:", error);
+        return [];
+    }
+}
+
+export async function sendFriendRequest(requesterUsername: string, addresseeUsername: string) {
+    if (!requesterUsername || !addresseeUsername || requesterUsername === addresseeUsername) {
+        return { success: false, error: "Invalid request" };
+    }
+    try {
+        const [requester, addressee] = await Promise.all([
+            prisma.user.findUnique({ where: { username: requesterUsername }, select: { id: true } }),
+            prisma.user.findUnique({ where: { username: addresseeUsername }, select: { id: true } }),
+        ]);
+        if (!requester || !addressee) return { success: false, error: "User not found" };
+
+        // Check if friendship already exists in either direction
+        const existing = await prisma.friendship.findFirst({
+            where: {
+                OR: [
+                    { requesterId: requester.id, addresseeId: addressee.id },
+                    { requesterId: addressee.id, addresseeId: requester.id },
+                ],
+            },
+        });
+
+        if (existing) {
+            if (existing.status === "ACCEPTED") return { success: false, error: "Already friends" };
+            if (existing.status === "PENDING") return { success: false, error: "Request already pending" };
+            // If DECLINED, allow re-request by updating
+            await prisma.friendship.update({
+                where: { id: existing.id },
+                data: { requesterId: requester.id, addresseeId: addressee.id, status: "PENDING", updatedAt: new Date() },
+            });
+            return { success: true };
+        }
+
+        await prisma.friendship.create({
+            data: { requesterId: requester.id, addresseeId: addressee.id },
+        });
+        return { success: true };
+    } catch (error) {
+        console.error("Send friend request failed:", error);
+        return { success: false, error: "Server error" };
+    }
+}
+
+export async function respondToFriendRequest(friendshipId: string, accept: boolean) {
+    try {
+        await prisma.friendship.update({
+            where: { id: friendshipId },
+            data: { status: accept ? "ACCEPTED" : "DECLINED" },
+        });
+        return { success: true };
+    } catch (error) {
+        console.error("Friend request response failed:", error);
+        return { success: false };
+    }
+}
+
+export async function removeFriend(friendshipId: string) {
+    try {
+        await prisma.friendship.delete({ where: { id: friendshipId } });
+        return { success: true };
+    } catch (error) {
+        console.error("Remove friend failed:", error);
+        return { success: false };
+    }
+}
+
+export async function getFriendsList(username: string) {
+    try {
+        const user = await prisma.user.findUnique({ where: { username }, select: { id: true } });
+        if (!user) return { friends: [], pending: [] };
+
+        const friendships = await prisma.friendship.findMany({
+            where: {
+                OR: [
+                    { requesterId: user.id, status: "ACCEPTED" },
+                    { addresseeId: user.id, status: "ACCEPTED" },
+                ],
+            },
+            include: {
+                requester: { select: { username: true, avatar: true, wins: true, losses: true } },
+                addressee: { select: { username: true, avatar: true, wins: true, losses: true } },
+            },
+        });
+
+        const friends = friendships.map((f) => ({
+            friendshipId: f.id,
+            ...(f.requesterId === user.id ? f.addressee : f.requester),
+        }));
+
+        // Pending requests received by this user
+        const pendingRequests = await prisma.friendship.findMany({
+            where: { addresseeId: user.id, status: "PENDING" },
+            include: {
+                requester: { select: { username: true, avatar: true, wins: true, losses: true } },
+            },
+        });
+
+        const pending = pendingRequests.map((f) => ({
+            friendshipId: f.id,
+            ...f.requester,
+        }));
+
+        return { friends, pending };
+    } catch (error) {
+        console.error("Get friends list failed:", error);
+        return { friends: [], pending: [] };
     }
 }

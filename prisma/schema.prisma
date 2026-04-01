@@ -22,7 +22,22 @@ model User {
   losses       Int           @default(0)
   matches      Battle[]
   achievements Achievement[]
+  sentRequests     Friendship[] @relation("FriendshipRequester")
+  receivedRequests Friendship[] @relation("FriendshipAddressee")
   createdAt    DateTime      @default(now())
+}
+
+model Friendship {
+  id          String   @id @default(cuid())
+  requester   User     @relation("FriendshipRequester", fields: [requesterId], references: [id])
+  requesterId String
+  addressee   User     @relation("FriendshipAddressee", fields: [addresseeId], references: [id])
+  addresseeId String
+  status      String   @default("PENDING") // PENDING, ACCEPTED, DECLINED
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([requesterId, addresseeId])
 }
 
 model Achievement {
