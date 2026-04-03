@@ -35,21 +35,46 @@ function HomeContent() {
   const [earnedAchievements, setEarnedAchievements] = useState<string[]>([]);
   const [errorMsg, setErrorMsg] = useState("");
   const [challenge, setChallenge] = useState<{ from: string; roomId: string } | null>(null);
+  const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
 
-  // Listen for friend challenges globally
+  // Subscribe to presence channel + friend challenges
   useEffect(() => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const username = (session?.user as any)?.username || session?.user?.name;
     if (!username) return;
 
-    const channel = pusherClient.subscribe(`user-${username}`);
-    channel.bind("friend-challenge", (data: { from: string; roomId: string }) => {
+    // Friend challenge channel
+    const userChannel = pusherClient.subscribe(`user-${username}`);
+    userChannel.bind("friend-challenge", (data: { from: string; roomId: string }) => {
       setChallenge(data);
     });
 
+    // Presence channel for online tracking
+    const presenceChannel = pusherClient.subscribe("presence-online");
+
+    presenceChannel.bind("pusher:subscription_succeeded", (members: { each: (cb: (member: { id: string }) => void) => void }) => {
+      const initial = new Set<string>();
+      members.each((member: { id: string }) => initial.add(member.id));
+      setOnlineUsers(initial);
+    });
+
+    presenceChannel.bind("pusher:member_added", (member: { id: string }) => {
+      setOnlineUsers((prev) => new Set(prev).add(member.id));
+    });
+
+    presenceChannel.bind("pusher:member_removed", (member: { id: string }) => {
+      setOnlineUsers((prev) => {
+        const next = new Set(prev);
+        next.delete(member.id);
+        return next;
+      });
+    });
+
     return () => {
-      channel.unbind_all();
+      userChannel.unbind_all();
       pusherClient.unsubscribe(`user-${username}`);
+      presenceChannel.unbind_all();
+      pusherClient.unsubscribe("presence-online");
     };
   }, [session]);
 
@@ -427,9 +452,10 @@ function HomeContent() {
 
             {menuStep === "friends" && (
               <FriendsPanel
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 currentUsername={(session?.user as any)?.username || session?.user?.name || ""}
                 onBack={() => setMenuStep("menu")}
+                onlineUsers={onlineUsers}
               />
             )}
 

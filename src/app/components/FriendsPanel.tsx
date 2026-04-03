@@ -17,9 +17,10 @@ interface FriendEntry {
 interface FriendsPanelProps {
   currentUsername: string;
   onBack: () => void;
+  onlineUsers: Set<string>;
 }
 
-export default function FriendsPanel({ currentUsername, onBack }: FriendsPanelProps) {
+export default function FriendsPanel({ currentUsername, onBack, onlineUsers }: FriendsPanelProps) {
   const router = useRouter();
   const [tab, setTab] = useState<"friends" | "requests" | "search">("friends");
   const [friends, setFriends] = useState<FriendEntry[]>([]);
@@ -90,12 +91,19 @@ export default function FriendsPanel({ currentUsername, onBack }: FriendsPanelPr
   const handleChallenge = async (friendUsername: string) => {
     const res = await createRoom(currentUsername, true);
     if (res.success && res.roomId) {
-      // Notify the friend about the challenge via Pusher
       await sendChallenge(currentUsername, friendUsername, res.roomId);
-      // Navigate challenger to the lobby
       router.push(`/lobby/${res.roomId}`);
     }
   };
+
+  // Sort friends: online first, then offline
+  const sortedFriends = [...friends].sort((a, b) => {
+    const aOnline = onlineUsers.has(a.username) ? 0 : 1;
+    const bOnline = onlineUsers.has(b.username) ? 0 : 1;
+    return aOnline - bOnline;
+  });
+
+  const onlineCount = friends.filter((f) => onlineUsers.has(f.username)).length;
 
   const tabs = [
     { key: "friends" as const, label: `FRIENDS (${friends.length})` },
@@ -105,7 +113,12 @@ export default function FriendsPanel({ currentUsername, onBack }: FriendsPanelPr
 
   return (
     <div className="w-full max-w-lg flex flex-col gap-4 animate-in slide-in-from-right duration-300">
-      <h2 className="retro-font text-xl text-center text-[#845ec2] mb-2">FRIENDS</h2>
+      <h2 className="retro-font text-xl text-center text-[#845ec2] mb-1">FRIENDS</h2>
+      {friends.length > 0 && (
+        <p className="retro-font text-[10px] text-center text-gray-400 -mt-3 mb-1">
+          <span className="text-[#00e756]">{onlineCount} ONLINE</span> / {friends.length} TOTAL
+        </p>
+      )}
 
       {/* Challenge Popup */}
       {challenge && (
@@ -170,14 +183,23 @@ export default function FriendsPanel({ currentUsername, onBack }: FriendsPanelPr
               <span className="text-gray-500 mt-2 block">Search for players to add!</span>
             </div>
           ) : (
-            friends.map((friend) => {
+            sortedFriends.map((friend) => {
               const tier = getTier(friend.wins);
+              const isOnline = onlineUsers.has(friend.username);
               return (
-                <div key={friend.friendshipId} className="flex items-center justify-between border-b-2 border-gray-700 py-3 last:border-0 gap-2">
+                <div key={friend.friendshipId} className={`flex items-center justify-between border-b-2 border-gray-700 py-3 last:border-0 gap-2 ${!isOnline ? "opacity-50" : ""}`}>
                   <div className="flex items-center gap-2 min-w-0">
-                    <img src={friend.avatar || ""} alt="" className="w-8 h-8 border-2 border-white rounded-full bg-white shrink-0" />
+                    <div className="relative shrink-0">
+                      <img src={friend.avatar || ""} alt="" className={`w-8 h-8 border-2 rounded-full bg-white ${isOnline ? "border-[#00e756]" : "border-gray-500 grayscale"}`} />
+                      <span className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-black ${isOnline ? "bg-[#00e756]" : "bg-gray-500"}`} />
+                    </div>
                     <div className="min-w-0">
-                      <p className="text-white retro-font text-xs truncate">{friend.username}</p>
+                      <div className="flex items-center gap-1">
+                        <p className="text-white retro-font text-xs truncate">{friend.username}</p>
+                        <span className={`retro-font text-[8px] ${isOnline ? "text-[#00e756]" : "text-gray-500"}`}>
+                          {isOnline ? "ONLINE" : "OFFLINE"}
+                        </span>
+                      </div>
                       <div className="flex items-center gap-1">
                         <span className="retro-font text-[9px] px-1 py-0.5 border border-black whitespace-nowrap" style={{ color: tier.color, backgroundColor: tier.bgColor }}>
                           {tier.icon} {tier.name}
@@ -187,12 +209,18 @@ export default function FriendsPanel({ currentUsername, onBack }: FriendsPanelPr
                     </div>
                   </div>
                   <div className="flex gap-1 shrink-0">
-                    <button
-                      onClick={() => handleChallenge(friend.username)}
-                      className="bg-[#ff6b6b] text-white px-2 py-1 border-2 border-black retro-font text-[9px] hover:bg-red-600 cursor-pointer"
-                    >
-                      FIGHT
-                    </button>
+                    {isOnline ? (
+                      <button
+                        onClick={() => handleChallenge(friend.username)}
+                        className="bg-[#ff6b6b] text-white px-2 py-1 border-2 border-black retro-font text-[9px] hover:bg-red-600 cursor-pointer"
+                      >
+                        FIGHT
+                      </button>
+                    ) : (
+                      <span className="bg-gray-700 text-gray-400 px-2 py-1 border-2 border-gray-600 retro-font text-[9px]">
+                        OFFLINE
+                      </span>
+                    )}
                     <button
                       onClick={() => handleRemove(friend.friendshipId, friend.username)}
                       className="bg-gray-600 text-white px-2 py-1 border-2 border-black retro-font text-[9px] hover:bg-gray-700 cursor-pointer"
