@@ -168,10 +168,10 @@ export default function BattleView({
       const handlePlayerLeft = (data: { username: string }) => {
         if (data.username !== player.username) {
           setBattleState((prev) => {
-            if (!prev) return null;
+            if (!prev || prev.winner) return prev; // Don't override if battle already ended
             return {
               ...prev,
-              winner: "player",  
+              winner: "player",
               logs: [`${data.username} fled the battle!`, ...prev.logs]
             };
           });
