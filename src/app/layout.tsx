@@ -4,8 +4,19 @@ import { Providers } from "./providers";
 import BackgroundMusic from "./components/BackgroundMusic";
 
 export const metadata: Metadata = {
-  title: "Git Battle",
-  description: "Battle your GitHub profile",
+  title: "Git Battle - Turn Your GitHub Profile Into an RPG Character",
+  description: "Git Battle transforms GitHub profiles into RPG characters that fight each other. Choose your class, battle friends, climb the leaderboard!",
+  openGraph: {
+    title: "Git Battle",
+    description: "Turn your GitHub profile into an RPG character and battle other developers!",
+    type: "website",
+    siteName: "Git Battle",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Git Battle",
+    description: "Turn your GitHub profile into an RPG character and battle other developers!",
+  },
 };
 
 export default function RootLayout({

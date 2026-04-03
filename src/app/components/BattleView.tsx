@@ -9,6 +9,7 @@ import { BattleState, initializeBattle, performPlayerTurn, performOpponentTurn, 
 import { PixelShield, PixelSword, PixelCrossedSwords } from "./PixelIcons";
 import DamageNumber from "./DamageNumber";
 import RankUpAnimation from "./RankUpAnimation";
+import ShareButton from "./ShareButton";
 import { getTier, TierDef } from "../lib/tiers";
 import { pusherClient } from "../lib/pusher";
 
@@ -566,13 +567,21 @@ export default function BattleView({
               </p>
             )}
             
-            <div className="flex flex-col gap-4">
-                <button 
+            <div className="flex flex-col gap-4 items-center">
+                <ShareButton
+                  text={
+                    battleState.winner === "player"
+                      ? `I just defeated ${opponent.username} in Git Battle!${winStreak > 1 ? ` ${winStreak} win streak!` : ""} Challenge me!`
+                      : `I was defeated by ${opponent.username} in Git Battle... but I'll be back for revenge!`
+                  }
+                  variant={battleState.winner === "player" ? "victory" : "defeat"}
+                />
+                <button
                   onClick={onReset}
-                  disabled={opponentHasLeft} 
-                  className={`border-4 border-black px-8 py-4 text-xl pixel-shadow retro-font cursor-pointer
-                    ${opponentHasLeft 
-                       ? "bg-gray-500 text-gray-300 cursor-not-allowed" 
+                  disabled={opponentHasLeft}
+                  className={`w-full border-4 border-black px-8 py-4 text-xl pixel-shadow retro-font cursor-pointer
+                    ${opponentHasLeft
+                       ? "bg-gray-500 text-gray-300 cursor-not-allowed"
                        : "bg-white text-black hover:bg-gray-200"
                     }`}
                 >
@@ -580,9 +589,9 @@ export default function BattleView({
                 </button>
 
                 {onMainMenu && (
-                    <button 
+                    <button
                       onClick={onMainMenu}
-                      className="bg-black text-white border-4 border-white px-8 py-2 text-sm hover:bg-gray-800 pixel-shadow retro-font cursor-pointer"
+                      className="w-full bg-black text-white border-4 border-white px-8 py-2 text-sm hover:bg-gray-800 pixel-shadow retro-font cursor-pointer"
                     >
                       EXIT TO MENU
                     </button>

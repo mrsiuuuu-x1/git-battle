@@ -5,8 +5,9 @@ import { useRouter } from "next/navigation";
 import { Character } from "../lib/github";
 import { pusherClient } from "../lib/pusher";
 import { notifyPlayerReady, joinMultiplayerRoom, notifyHostReply, notifyOpponentLeft } from "../actions"; 
-import UserCard from "./UserCard"; 
+import UserCard from "./UserCard";
 import BattleView from "./BattleView";
+import ShareButton from "./ShareButton";
 import { playSound } from "../lib/sounds";
 
 interface ActiveRoomProps {
@@ -132,8 +133,15 @@ export default function ActiveRoom({ player, roomId, initialOpponent }: ActiveRo
                 <h1 className="retro-font text-3xl md:text-4xl text-white mb-2 animate-pulse">
                     {opponent ? "VS MODE" : "WAITING FOR CHALLENGER..."}
                 </h1>
-                <div className="retro-font text-[#4ecdc4] text-sm border-2 border-[#4ecdc4] px-4 py-2 inline-block">
-                    ROOM ID: {roomId}
+                <div className="flex items-center justify-center gap-3 flex-wrap">
+                    <div className="retro-font text-[#4ecdc4] text-sm border-2 border-[#4ecdc4] px-4 py-2 inline-block">
+                        ROOM ID: {roomId}
+                    </div>
+                    <ShareButton
+                      text={`Battle me on Git Battle! Join my room with code: ${roomId}`}
+                      url={typeof window !== "undefined" ? `${window.location.origin}/lobby/${roomId}` : ""}
+                      size="sm"
+                    />
                 </div>
             </div>
 

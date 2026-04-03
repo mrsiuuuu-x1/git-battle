@@ -10,6 +10,7 @@ import BattleView from "./components/BattleView";
 import FriendsPanel from "./components/FriendsPanel";
 import { getCharacterProfile, Character } from "./lib/github";
 import { PixelSword, PixelShield } from "./components/PixelIcons";
+import ShareButton from "./components/ShareButton";
 import { pusherClient } from "./lib/pusher";
 
 function HomeContent() {
@@ -300,7 +301,15 @@ function HomeContent() {
 
             {menuStep === "leaderboard" && (
               <div className="w-full max-w-md flex flex-col gap-4 animate-in slide-in-from-right duration-300">
-                <h2 className="retro-font text-xl text-center text-[#ffd700] mb-2">HALL OF FAME</h2>
+                <div className="flex items-center justify-center gap-3 mb-2">
+                  <h2 className="retro-font text-xl text-center text-[#ffd700]">HALL OF FAME</h2>
+                  {leaderboard.length > 0 && (
+                    <ShareButton
+                      text={`Check out the Git Battle leaderboard! #1 is ${leaderboard[0].username} with ${leaderboard[0].wins} wins!`}
+                      size="sm"
+                    />
+                  )}
+                </div>
                 <div className="bg-black/40 border-4 border-black p-4 max-h-60 overflow-y-auto">
                 {leaderboard.length === 0 ? (
                   <p className="text-white retro-font text-center">NO LEGENDS YET...</p>
@@ -339,7 +348,13 @@ function HomeContent() {
 
             {menuStep === "history" && (
               <div className="w-full max-w-md flex flex-col gap-4 animate-in slide-in-from-right duration-300">
-                <h2 className="retro-font text-xl text-center text-[#4ecdc4] mb-2">BATTLE HISTORY</h2>
+                <div className="flex items-center justify-center gap-3 mb-2">
+                  <h2 className="retro-font text-xl text-center text-[#4ecdc4]">BATTLE HISTORY</h2>
+                  <ShareButton
+                    text={`My Git Battle stats: ${battleHistory.wins}W / ${battleHistory.losses}L${battleHistory.streak > 0 ? ` | ${battleHistory.streak} win streak!` : ""} Challenge me!`}
+                    size="sm"
+                  />
+                </div>
 
                 {/* Stats Summary with Tier */}
                 {(() => {
