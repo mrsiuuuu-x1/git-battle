@@ -119,7 +119,7 @@ NEXT_PUBLIC_PUSHER_CLUSTER=your_pusher_cluster
 - [x] GitHub OAuth + stats caching
 - [x] Friend system with online presence tracking
 - [x] Real-time friend challenges via Pusher
-- [ ] Social sharing (battle results, profile cards)
+- [x] Social sharing (battle results, profile cards)
 - [ ] Language specialist badges
 - [ ] Enhanced leaderboard filters
 - [ ] Quest system
