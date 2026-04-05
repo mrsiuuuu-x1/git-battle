@@ -2,7 +2,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/app/lib/auth";
 import { redirect } from "next/navigation";
 import { getCharacterProfile } from "@/app/lib/github";
-import ActiveRoom from "../../components/ActiveRoom"; 
+import { prisma } from "@/app/lib/prisma";
+import ActiveRoom from "../../components/ActiveRoom";
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -46,11 +47,17 @@ export default async function LobbyPage({ params }: PageProps) {
       };
   }
 
+  const room = await prisma.room.findUnique({
+    where: { id: roomId },
+    select: { isFriendBattle: true },
+  });
+
   return (
-    <ActiveRoom 
-      player={myCharacter} 
-      roomId={roomId} 
-      initialOpponent={null} 
+    <ActiveRoom
+      player={myCharacter}
+      roomId={roomId}
+      initialOpponent={null}
+      isFriendBattle={room?.isFriendBattle ?? false}
     />
   );
 }

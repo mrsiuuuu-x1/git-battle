@@ -89,7 +89,7 @@ export default function FriendsPanel({ currentUsername, onBack, onlineUsers }: F
   };
 
   const handleChallenge = async (friendUsername: string) => {
-    const res = await createRoom(currentUsername, true);
+    const res = await createRoom(currentUsername, true, true);
     if (res.success && res.roomId) {
       await sendChallenge(currentUsername, friendUsername, res.roomId);
       router.push(`/lobby/${res.roomId}`);

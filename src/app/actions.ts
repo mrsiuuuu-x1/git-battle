@@ -139,7 +139,7 @@ export async function saveBattleResult(
     avatar: string,
     result: "WIN" | "LOSS",
     opponentName: string,
-    gameMode: "pve" | "pvp" = "pve"
+    gameMode: "pve" | "pvp" | "friend" = "pve"
 ) {
     if (!username) return;
 
@@ -285,7 +285,7 @@ export async function sendBattleMove(roomId: string, moveData: any) {
     }
 }
 
-export async function createRoom(hostUsername: string, isPrivate: boolean = false) {
+export async function createRoom(hostUsername: string, isPrivate: boolean = false, isFriendBattle: boolean = false) {
     try {
         let roomId = generateRoomCode();
         let isUnique = false;
@@ -305,6 +305,7 @@ export async function createRoom(hostUsername: string, isPrivate: boolean = fals
             id: roomId,
             host: hostUsername,
             isPrivate: isPrivate,
+            isFriendBattle: isFriendBattle,
             status: "WAITING",
         },
     });

@@ -14,9 +14,10 @@ interface ActiveRoomProps {
   player: Character;
   roomId: string;
   initialOpponent?: Character | null;
+  isFriendBattle?: boolean;
 }
 
-export default function ActiveRoom({ player, roomId, initialOpponent }: ActiveRoomProps) {
+export default function ActiveRoom({ player, roomId, initialOpponent, isFriendBattle = false }: ActiveRoomProps) {
   const router = useRouter();
   const [opponent, setOpponent] = useState<Character | null>(initialOpponent || null);
   const [amIReady, setAmIReady] = useState(false);
@@ -107,11 +108,11 @@ export default function ActiveRoom({ player, roomId, initialOpponent }: ActiveRo
   
   if (gameStarted && opponent) {
        return (
-           <BattleView 
-              player={player} 
-              opponent={opponent} 
+           <BattleView
+              player={player}
+              opponent={opponent}
               roomId={roomId}
-              gameMode="pvp"
+              gameMode={isFriendBattle ? "friend" : "pvp"}
               onReset={handleExit}   
               onMainMenu={handleExit} 
               opponentHasLeft={opponentLeft} 

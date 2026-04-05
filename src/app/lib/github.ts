@@ -313,6 +313,6 @@ function getClassStrengths(characterClass: string): string[] {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function formatGitHubInsights(metadata: any): string {
-  const { totalCommits, totalStars, followers, topLanguage, yearsActive } = metadata;
+ const { totalCommits, totalStars, followers, topLanguage, yearsActive } = metadata;
   return `${totalCommits.toLocaleString()} commits • ${totalStars} stars • ${followers} followers • ${topLanguage} expert • ${yearsActive} years active`;
 }

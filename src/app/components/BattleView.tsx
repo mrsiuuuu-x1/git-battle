@@ -19,7 +19,7 @@ interface BattleViewProps {
   onReset: () => void;
   onMainMenu?: () => void; 
   opponentHasLeft?: boolean;
-  gameMode?: "pve" | "pvp";
+  gameMode?: "pve" | "pvp" | "friend";
   roomId?: string;
 }
 
@@ -33,6 +33,8 @@ export default function BattleView({
     roomId 
 }: BattleViewProps) {
     
+  const isMultiplayer = gameMode === "pvp" || gameMode === "friend";
+
   const [battleState, setBattleState] = useState<BattleState | null>(null);
   const [showExitConfirm, setShowExitConfirm] = useState(false);
 
@@ -112,7 +114,7 @@ export default function BattleView({
 
   // MULTIPLAYER LISTENER
   useEffect(() => {
-    if (gameMode === "pvp" && roomId) {
+    if (isMultiplayer && roomId) {
       const channel = pusherClient.subscribe(roomId);
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -194,7 +196,7 @@ export default function BattleView({
 
   // Handle Enemy Turn (Auto - PVE ONLY)
   useEffect(() => {
-    if (gameMode === "pvp") return;
+    if (isMultiplayer) return;
 
     if (battleState && !battleState.winner && !battleState.isPlayerTurn) {
       const timer = setTimeout(() => {
@@ -251,7 +253,7 @@ export default function BattleView({
 
     setBattleState(newState);
 
-    if (gameMode === "pvp" && roomId) {
+    if (isMultiplayer && roomId) {
         try {
             await sendBattleMove(roomId, {
                 attacker: player.username,
@@ -492,10 +494,10 @@ export default function BattleView({
       {!battleState.isPlayerTurn && !battleState.winner && (
          <div className="flex flex-col items-center gap-2 mt-4">
              <p className="text-center text-white retro-font text-sm animate-pulse">
-                {gameMode === "pvp" ? "WAITING FOR OPPONENT..." : "OPPONENT IS THINKING..."}
+                {isMultiplayer ? "WAITING FOR OPPONENT..." : "OPPONENT IS THINKING..."}
              </p>
              
-             {gameMode === "pvp" && (
+             {isMultiplayer && (
                  <button 
                     onClick={() => setShowExitConfirm(true)}
                     className="text-[10px] text-gray-400 hover:text-white underline retro-font"
@@ -521,7 +523,7 @@ export default function BattleView({
               </button>
               <button
                 onClick={async () => {
-                  if (gameMode === "pvp" && roomId) {
+                  if (isMultiplayer && roomId) {
                     await notifyOpponentLeft(roomId, player.username);
                   }
                   onReset();
