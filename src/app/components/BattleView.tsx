@@ -61,7 +61,8 @@ export default function BattleView({
         player.username,
         player.avatar,
         battleState.winner === "player" ? "WIN" : "LOSS",
-        opponent.username
+        opponent.username,
+        gameMode ?? "pve"
       ).then((result) => {
         getBattleHistory(player.username).then((data) => {
           setWinStreak(data.streak);

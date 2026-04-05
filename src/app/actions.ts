@@ -138,23 +138,26 @@ export async function saveBattleResult(
     username: string,
     avatar: string,
     result: "WIN" | "LOSS",
-    opponentName: string
+    opponentName: string,
+    gameMode: "pve" | "pvp" = "pve"
 ) {
     if (!username) return;
+
+    const isPvP = gameMode === "pvp";
 
     try {
         const user = await prisma.user.upsert({
             where: { username },
             update: {
-                wins: { increment: result === "WIN" ? 1 : 0 },
-                losses: { increment: result === "LOSS" ? 1 : 0 },
+                wins: { increment: isPvP && result === "WIN" ? 1 : 0 },
+                losses: { increment: isPvP && result === "LOSS" ? 1 : 0 },
                 avatar: avatar
             },
             create: {
                 username,
                 avatar,
-                wins: result === "WIN" ? 1 : 0,
-                losses: result === "LOSS" ? 1 : 0
+                wins: isPvP && result === "WIN" ? 1 : 0,
+                losses: isPvP && result === "LOSS" ? 1 : 0
             }
         });
 
