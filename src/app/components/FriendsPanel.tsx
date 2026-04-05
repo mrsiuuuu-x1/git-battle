@@ -113,7 +113,7 @@ export default function FriendsPanel({ currentUsername, onBack, onlineUsers }: F
 
   return (
     <div className="w-full max-w-lg flex flex-col gap-4 animate-in slide-in-from-right duration-300">
-      <h2 className="retro-font text-xl text-center text-[#845ec2] mb-1">FRIENDS</h2>
+      <h2 className="retro-font text-lg sm:text-xl text-center text-[#845ec2] mb-1">FRIENDS</h2>
       {friends.length > 0 && (
         <p className="retro-font text-[10px] text-center text-gray-400 -mt-3 mb-1">
           <span className="text-[#00e756]">{onlineCount} ONLINE</span> / {friends.length} TOTAL
@@ -156,7 +156,7 @@ export default function FriendsPanel({ currentUsername, onBack, onlineUsers }: F
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
-            className={`flex-1 retro-font text-[10px] md:text-xs py-2 px-1 border-4 border-black cursor-pointer transition-all ${
+            className={`flex-1 retro-font text-[10px] md:text-xs py-3 sm:py-2 px-2 sm:px-1 border-4 border-black cursor-pointer transition-all ${
               tab === t.key
                 ? "bg-[#845ec2] text-white translate-y-0.5 shadow-none"
                 : "bg-gray-200 text-gray-600 hover:bg-white shadow-[3px_3px_0_#000]"

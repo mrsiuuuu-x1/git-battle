@@ -12,7 +12,6 @@ interface RankUpAnimationProps {
 export default function RankUpAnimation({ oldTier, newTier, onComplete }: RankUpAnimationProps) {
   const [phase, setPhase] = useState<"flash" | "old" | "transform" | "new" | "done">("flash");
 
-  // Deterministic pseudo-random particle positions based on index (avoids Math.random purity issues)
   const particles = Array.from({ length: 20 }).map((_, i) => ({
     w: 4 + ((i * 7 + 3) % 9),
     left: ((i * 37 + 13) % 100),

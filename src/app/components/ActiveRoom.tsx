@@ -129,8 +129,8 @@ export default function ActiveRoom({ player, roomId, initialOpponent }: ActiveRo
                 ← EXIT TO MENU
             </button>
 
-            <div className="mb-10 text-center">
-                <h1 className="retro-font text-3xl md:text-4xl text-white mb-2 animate-pulse">
+            <div className="mb-6 sm:mb-10 text-center">
+                <h1 className="retro-font text-xl sm:text-3xl md:text-4xl text-white mb-2 animate-pulse">
                     {opponent ? "VS MODE" : "WAITING FOR CHALLENGER..."}
                 </h1>
                 <div className="flex items-center justify-center gap-3 flex-wrap">
@@ -145,7 +145,7 @@ export default function ActiveRoom({ player, roomId, initialOpponent }: ActiveRo
                 </div>
             </div>
 
-            <div className="flex flex-col md:flex-row items-center gap-10 md:gap-20">
+            <div className="flex flex-col md:flex-row items-center gap-6 sm:gap-10 md:gap-20">
                 {/* MY CARD */}
                 <div className="flex flex-col items-center gap-4">
                 <div className="relative">
@@ -180,7 +180,7 @@ export default function ActiveRoom({ player, roomId, initialOpponent }: ActiveRo
                         )}
                     </div>
                 ) : (
-                    <div className="w-80 h-[400px] border-4 border-dashed border-gray-600 flex items-center justify-center bg-gray-800/50">
+                    <div className="w-full sm:w-80 h-[300px] sm:h-[400px] border-4 border-dashed border-gray-600 flex items-center justify-center bg-gray-800/50">
                         <div className="text-center p-4">
                             <div className="w-12 h-12 border-4 border-[#4ecdc4] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
                             <p className="retro-font text-gray-500 text-xs animate-pulse">
@@ -195,14 +195,14 @@ export default function ActiveRoom({ player, roomId, initialOpponent }: ActiveRo
                 </div>
             </div>
 
-            <div className="mt-16">
+            <div className="mt-8 sm:mt-16">
                 {!opponent ? (
                     <p className="retro-font text-gray-500 text-xs">Waiting for opponent to join...</p>
                 ) : (
                     <button
                         onClick={handleReadyClick}
                         disabled={amIReady}
-                        className={`retro-font text-xl px-12 py-6 border-4 border-black shadow-[8px_8px_0px_#000] transition-all
+                        className={`retro-font text-lg sm:text-xl px-8 sm:px-12 py-4 sm:py-6 border-4 border-black shadow-[8px_8px_0px_#000] transition-all
                             ${amIReady 
                                 ? "bg-gray-600 text-gray-400 cursor-not-allowed translate-y-2 shadow-none" 
                                 : "bg-[#ffd700] text-black hover:-translate-y-2 hover:shadow-[12px_12px_0px_#000] hover:bg-yellow-300"

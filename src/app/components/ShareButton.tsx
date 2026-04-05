@@ -20,7 +20,6 @@ export default function ShareButton({ text, url, variant = "default", size = "md
       try {
         await navigator.share({ text, url: shareUrl });
       } catch {
-        // User cancelled share
       }
       setShowDropdown(false);
     }
@@ -136,8 +135,6 @@ export default function ShareButton({ text, url, variant = "default", size = "md
     </div>
   );
 }
-
-// Inline pixel-style SVG icons to match the retro theme
 
 function ShareIcon({ size = 16 }: { size?: number }) {
   return (

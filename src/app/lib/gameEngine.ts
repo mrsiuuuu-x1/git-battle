@@ -230,10 +230,22 @@ export function performOpponentTurn(state: BattleState, player: Character, oppon
       newState.opponentHp = Math.min(newState.opponentMaxHp, newState.opponentHp + heal);
       newState.logs = [...newState.logs, `${opponent.username} uses CONTAINER SHIELD! 🛡️ ${hit.damage} DMG`];
 
+    } else if (aiClass === "Full-Stack Samurai") {
+      const hit = getHitDamage(opponent, player, 1.3);
+      newState.playerHp = Math.max(0, newState.playerHp - hit.damage);
+      newState.opponentMana = Math.min(newState.opponentMaxMana, newState.opponentMana + 10);
+      newState.logs = [...newState.logs, `${opponent.username} uses CODE FUSION! 🔮 ${hit.damage} DMG + 10 mana restored`];
+
+    } else if (aiClass === "Open-Source Wizard") {
+      const communityMultiplier = 1.5 + (opponent.metadata?.totalStars || 0) / 1000;
+      const hit = getHitDamage(opponent, player, communityMultiplier);
+      newState.playerHp = Math.max(0, newState.playerHp - hit.damage);
+      newState.logs = [...newState.logs, `${opponent.username} uses COMMUNITY STRIKE! 🌟 ${hit.damage} legendary DMG`];
+
     } else {
       const hit = getHitDamage(opponent, player, 1.2);
       newState.playerHp = Math.max(0, newState.playerHp - hit.damage);
-      newState.logs = [...newState.logs, `${opponent.username} uses SUPER SMASH! ${hit.damage} DMG`];
+      newState.logs = [...newState.logs, `${opponent.username} uses HELLO WORLD SMASH! ${hit.damage} DMG`];
     }
 
   } else {

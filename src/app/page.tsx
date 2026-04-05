@@ -15,7 +15,7 @@ import { pusherClient } from "./lib/pusher";
 
 function HomeContent() {
   const { data: session, status } = useSession();
-  const router = useRouter(); 
+  const router = useRouter();
   const searchParams = useSearchParams();
 
   const [isPlaying, setIsPlaying] = useState(false);
@@ -511,7 +511,7 @@ function HomeContent() {
                         </div>
                     </div>
 
-                    <div className="flex-1 bg-black/40 border-4 border-black p-6 flex flex-col gap-4 h-[400px]">
+                    <div className="flex-1 bg-black/40 border-4 border-black p-6 flex flex-col gap-4 h-[300px] sm:h-[400px]">
                         <div className="flex justify-between items-center border-b-4 border-white pb-2">
                             <h3 className="retro-font text-[#ff4d4d] text-xl">🌍 PUBLIC</h3>
                             <button onClick={refreshLobby} className="text-xs retro-font cursor-pointer text-white hover:text-yellow-400">

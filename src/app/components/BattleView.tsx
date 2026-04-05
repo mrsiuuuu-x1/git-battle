@@ -293,7 +293,7 @@ export default function BattleView({
       {/* EXIT BUTTON */}
       <button
         onClick={() => setShowExitConfirm(true)}
-        className="absolute top-4 left-4 z-20 bg-white text-black border-4 border-black px-4 py-2 retro-font text-sm hover:bg-red-500 hover:text-white transition-colors shadow-[4px_4px_0px_rgba(0,0,0,0.5)]"
+        className="absolute top-2 left-2 sm:top-4 sm:left-4 z-20 bg-white text-black border-2 sm:border-4 border-black px-2 py-1 sm:px-4 sm:py-2 retro-font text-xs sm:text-sm hover:bg-red-500 hover:text-white transition-colors shadow-[4px_4px_0px_rgba(0,0,0,0.5)]"
       >
         ← EXIT
       </button>
@@ -319,13 +319,13 @@ export default function BattleView({
               className="w-16 h-16 md:w-32 md:h-32 rounded-full border-4 border-black mb-2 md:mb-4 bg-white"
             />
             <h2 className="text-sm md:text-xl text-white mb-1 md:mb-2">{player.username}</h2>
-            <span className="bg-[#ffd700] text-black text-[8px] md:text-[10px] px-2 py-1 border-2 border-black mb-2 md:mb-4">
+            <span className="bg-[#ffd700] text-black text-[10px] md:text-[11px] px-2 py-1 border-2 border-black mb-2 md:mb-4">
               {player.class}
             </span>
 
             {/* HP BAR */}
             <div className="w-full">
-              <div className="text-[8px] md:text-[10px] text-white mb-1 flex justify-between">
+              <div className="text-[10px] md:text-[11px] text-white mb-1 flex justify-between">
                 <span>HP</span>
                 <span>{battleState.playerHp}/{battleState.playerMaxHp}</span>
               </div>
@@ -343,7 +343,7 @@ export default function BattleView({
             </div>
             {/* MANA BAR */}
             <div className="w-full mt-1 md:mt-2">
-              <div className="text-[8px] md:text-[10px] text-white mb-1 flex justify-between">
+              <div className="text-[10px] md:text-[11px] text-white mb-1 flex justify-between">
                 <span>⚡ MANA</span>
                 <span>{battleState.playerMana}/{battleState.playerMaxMana}</span>
               </div>
@@ -374,13 +374,13 @@ export default function BattleView({
               className="w-16 h-16 md:w-32 md:h-32 rounded-full border-4 border-black mb-2 md:mb-4 bg-white"
             />
             <a href={`https://github.com/${opponent.username}`} target="_blank" rel="noopener noreferrer" className="text-sm md:text-xl text-white mb-1 md:mb-2 hover:text-[#4ecdc4] underline">{opponent.username}</a>
-            <span className="bg-[#ffd700] text-black text-[8px] md:text-[10px] px-2 py-1 border-2 border-black mb-2 md:mb-4">
+            <span className="bg-[#ffd700] text-black text-[10px] md:text-[11px] px-2 py-1 border-2 border-black mb-2 md:mb-4">
               {opponent.class}
             </span>
 
             {/* HP BAR */}
             <div className="w-full">
-              <div className="text-[8px] md:text-[10px] text-white mb-1 flex justify-between">
+              <div className="text-[10px] md:text-[11px] text-white mb-1 flex justify-between">
                 <span>HP</span>
                 <span>{battleState.opponentHp}/{battleState.opponentMaxHp}</span>
               </div>
@@ -398,7 +398,7 @@ export default function BattleView({
             </div>
             {/* MANA BAR */}
             <div className="w-full mt-1 md:mt-2">
-              <div className="text-[8px] md:text-[10px] text-white mb-1 flex justify-between">
+              <div className="text-[10px] md:text-[11px] text-white mb-1 flex justify-between">
                 <span>⚡ MANA</span>
                 <span>{battleState.opponentMana}/{battleState.opponentMaxMana}</span>
               </div>
@@ -419,7 +419,7 @@ export default function BattleView({
 
       {/* LOGS */}
       <div className="w-full max-w-4xl px-2 md:px-4 mt-4 md:mt-8">
-        <div ref={scrollRef} className="retro-font text-[10px] md:text-xs bg-black/40 border-4 border-black p-2 md:p-4 h-28 md:h-40 overflow-y-auto shadow-inner space-y-1 md:space-y-2">
+        <div ref={scrollRef} className="retro-font text-[11px] md:text-xs bg-black/40 border-4 border-black p-2 md:p-4 h-28 md:h-40 overflow-y-auto shadow-inner space-y-1 md:space-y-2">
           {battleState.logs.map((log, i) => {
             let logStyle = "border-[#ffd700] text-gray-300";
             if (log.includes("hits") || log.includes("DMG")) {
@@ -467,8 +467,8 @@ export default function BattleView({
            player.class === "Open-Source Wizard" ? "COMMUNITY STRIKE" :
            "SPECIAL"}</span>
           <span className="sm:hidden">SPECIAL</span>
-          <span className="text-[8px] md:text-xs opacity-70">(25⚡)</span>
-          {battleState.playerSpecialCd > 0 && <span className="text-[8px] md:text-xs">({battleState.playerSpecialCd})</span>}
+          <span className="text-[10px] md:text-xs opacity-70">(25⚡)</span>
+          {battleState.playerSpecialCd > 0 && <span className="text-[10px] md:text-xs">({battleState.playerSpecialCd})</span>}
         </button>
 
         <button
@@ -482,8 +482,8 @@ export default function BattleView({
         >
           <PixelShield className="w-4 h-4 md:w-6 md:h-6" />
           {battleState.playerHealsUsed >= 3 ? "EMPTY" : `HEAL (${healsLeft})`}
-          <span className="text-[8px] md:text-xs opacity-70">(15⚡)</span>
-          {battleState.playerHealCd > 0 && battleState.playerHealsUsed < 3 && <span className="text-[8px] md:text-xs">({battleState.playerHealCd})</span>}
+          <span className="text-[10px] md:text-xs opacity-70">(15⚡)</span>
+          {battleState.playerHealCd > 0 && battleState.playerHealsUsed < 3 && <span className="text-[10px] md:text-xs">({battleState.playerHealCd})</span>}
         </button>
       </div>
 
