@@ -19,6 +19,7 @@ export interface Character {
     publicRepos: number;
     yearsActive: number;
     topLanguage: string;
+    languageCounts: Record<string, number>;
     contributionStreak: number;
     mergedPRs: number;
     codeReviews: number;
@@ -143,6 +144,7 @@ async function calculateMetadata(
     publicRepos: userData.public_repos,
     yearsActive,
     topLanguage,
+    languageCounts,
     contributionStreak,
     mergedPRs,
     codeReviews,

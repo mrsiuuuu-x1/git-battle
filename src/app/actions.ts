@@ -2,7 +2,7 @@
 import { pusherServer } from "./lib/pusher";
 import { getCharacterProfile } from "./lib/github";
 import { prisma } from "./lib/prisma";
-import { ACHIEVEMENTS } from "./lib/achievements";
+import { ACHIEVEMENTS, LANGUAGE_BADGES } from "./lib/achievements";
 
 function generateRoomCode() {
     const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -29,6 +29,7 @@ export async function fetchUserStats(username: string, forceRefresh = false) {
                         mergedPRs: profile.metadata.mergedPRs,
                         contributionStreak: profile.metadata.contributionStreak,
                         organizations: profile.metadata.organizations,
+                        languageCounts: profile.metadata.languageCounts,
                     });
                 }
                 return profile;
@@ -46,6 +47,7 @@ export async function fetchUserStats(username: string, forceRefresh = false) {
             mergedPRs: profile.metadata.mergedPRs,
             contributionStreak: profile.metadata.contributionStreak,
             organizations: profile.metadata.organizations,
+            languageCounts: profile.metadata.languageCounts,
         });
 
         // Save to cache
@@ -70,6 +72,7 @@ interface AchievementContext {
     mergedPRs?: number;
     contributionStreak?: number;
     organizations?: number;
+    languageCounts?: Record<string, number>;
 }
 
 async function checkAndGrantAchievements(username: string, context: AchievementContext): Promise<string[]> {
@@ -92,6 +95,12 @@ async function checkAndGrantAchievements(username: string, context: AchievementC
             STREAK_WARRIOR: (context.contributionStreak ?? 0) >= 7,
             OPEN_SOURCE:    (context.organizations ?? 0) >= 3,
         };
+
+        // Language specialist badges
+        const langCounts = context.languageCounts ?? {};
+        for (const lb of LANGUAGE_BADGES) {
+            conditions[lb.key] = (langCounts[lb.language] ?? 0) >= 5;
+        }
 
         const newlyUnlocked: string[] = [];
 

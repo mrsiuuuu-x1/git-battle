@@ -34,6 +34,7 @@ function HomeContent() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [battleHistory, setBattleHistory] = useState<{ battles: any[]; wins: number; losses: number; streak: number }>({ battles: [], wins: 0, losses: 0, streak: 0 });
   const [earnedAchievements, setEarnedAchievements] = useState<string[]>([]);
+  const [achievementFilter, setAchievementFilter] = useState<"all" | "battle" | "github" | "special" | "language">("all");
   const [errorMsg, setErrorMsg] = useState("");
   const [challenge, setChallenge] = useState<{ from: string; roomId: string } | null>(null);
   const [onlineUsers, setOnlineUsers] = useState<Set<string>>(new Set());
@@ -426,8 +427,25 @@ function HomeContent() {
                 <p className="retro-font text-xs text-center text-gray-400 mb-2">
                   {earnedAchievements.length}/{ACHIEVEMENTS.length} UNLOCKED
                 </p>
-                <div className="grid grid-cols-2 gap-3">
-                  {ACHIEVEMENTS.map((achievement) => {
+                <div className="flex justify-center gap-2 mb-2 flex-wrap">
+                  {(["all", "battle", "github", "special", "language"] as const).map((tab) => (
+                    <button
+                      key={tab}
+                      onClick={() => setAchievementFilter(tab)}
+                      className={`retro-font text-[9px] px-2 py-1 border-2 border-black cursor-pointer transition-all ${
+                        achievementFilter === tab
+                          ? "bg-[#ff9f43] text-black"
+                          : "bg-black/40 text-gray-400 hover:text-white"
+                      }`}
+                    >
+                      {tab.toUpperCase()}
+                    </button>
+                  ))}
+                </div>
+                <div className="grid grid-cols-2 gap-3 max-h-[400px] overflow-y-auto pr-1">
+                  {ACHIEVEMENTS
+                    .filter(a => achievementFilter === "all" || a.category === achievementFilter)
+                    .map((achievement) => {
                     const unlocked = earnedAchievements.includes(achievement.key);
                     return (
                       <div
@@ -448,6 +466,7 @@ function HomeContent() {
                         <div className={`retro-font text-[8px] mt-1 px-1 py-0.5 border border-black inline-block ${
                           achievement.category === "battle" ? "bg-[#ff6b6b]/30 text-[#ff6b6b]" :
                           achievement.category === "github" ? "bg-[#4ecdc4]/30 text-[#4ecdc4]" :
+                          achievement.category === "language" ? "bg-[#f9ca24]/30 text-[#f9ca24]" :
                           "bg-[#845ec2]/30 text-[#845ec2]"
                         }`}>
                           {achievement.category.toUpperCase()}
