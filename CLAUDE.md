@@ -18,7 +18,7 @@ Git Battle is a turn-based RPG where GitHub profiles are converted into RPG char
 
 ### Core Data Flow
 
-1. **GitHub profile fetch** (`src/app/lib/github.ts`) - Calls GitHub REST API (via axios, no auth token), analyzes repos/languages/activity, determines a character class (Frontend Warrior, Backend Mage, DevOps Paladin, Full-Stack Samurai, Open-Source Wizard, Code Apprentice), and computes RPG stats (HP, attack, defense, speed, mana, critRate).
+1. **GitHub profile fetch** (`src/app/lib/github.ts`) - Calls GitHub REST API (via axios, no auth token), analyzes repos/languages/activity, determines a character class (Frontend Warrior, Backend Mage, DevOps Paladin, Full-Stack Samurai, Open-Source Wizard, Code Apprentice), and computes RPG stats (HP, attack, defense, speed, mana, critRate). Metadata includes `languageCounts` (per-language repo count) used for language specialist badges.
 
 2. **Battle engine** (`src/app/lib/gameEngine.ts`) - Pure functions, no side effects. `initializeBattle` creates state, `performPlayerTurn` handles player actions (attack/heal/special), `performOpponentTurn` runs AI logic. Each class has a unique special ability with different damage multipliers and effects. Mana system gates special (25 mana) and heal (15 mana) actions.
 
@@ -26,12 +26,16 @@ Git Battle is a turn-based RPG where GitHub profiles are converted into RPG char
 
 4. **Real-time multiplayer** - Pusher (server + client) for room-based multiplayer. Rooms are created with 6-char codes, auto-deleted after 6 minutes. Events: `user-joined`, `battle-move`, `player-left`, `player-ready`, `host-reply`, `rematch`.
 
+5. **Friend system** - Users can search, add, and manage friends. Friends can challenge each other to battles via Pusher events (`friend-challenge`). Friend battle rooms are flagged with `isFriendBattle: true`.
+
 ### Key Models (Prisma/PostgreSQL)
 
-- **User** - username (unique), wins/losses counters, achievements relation
+- **User** - username (unique), wins/losses counters (PvP matchmaking only), achievements relation, friendships
 - **Battle** - links to player, stores opponent name and winner
-- **Achievement** - per-user unlocks keyed by achievement key (unique per user)
-- **Room** - multiplayer lobby with host/guest, status (WAITING/PLAYING), auto-cleanup
+- **Achievement** - per-user unlocks keyed by achievement key (unique per user). Includes battle, github, special, and language specialist categories
+- **Room** - multiplayer lobby with host/guest, status (WAITING/PLAYING), `isPrivate`, `isFriendBattle` flags, auto-cleanup after 6 minutes
+- **Friendship** - bidirectional friend requests with status (PENDING/ACCEPTED/DECLINED)
+- **StatsCache** - caches GitHub profile data per username with 7-day TTL
 
 ### Auth
 
@@ -47,3 +51,6 @@ Requires: `PRISMA_DATABASE_URL`, `POSTGRES_URL` (Prisma), `GITHUB_ID`, `GITHUB_S
 - AI opponent decision-making uses probability thresholds based on HP/mana percentages
 - Stats are clamped to ranges (HP: 200-600, attack: 10+, defense: 5+, speed: 10+, mana: 10+)
 - Achievement checking runs on both profile fetch and battle result save
+- Wins/losses only increment for PvP matchmaking battles — PvE (AI) and friend battles are recorded in history but don't affect leaderboard standings
+- Language specialist badges unlock when a user has 5+ repos in a language (18 languages supported)
+- Achievements panel has category filter tabs (all/battle/github/special/language)
