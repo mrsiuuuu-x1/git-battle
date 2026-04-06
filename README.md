@@ -25,8 +25,8 @@ Git Battle takes two GitHub usernames, analyzes their profiles (Repositories, Fo
 
 ### Progression & Social
 * **Tier System** — Rank up from Background NPC to Final Boss based on wins, with rank-up animations.
-* **8 Achievements** — Unlock achievements for battle milestones and GitHub stats.
-* **Leaderboard** — Top 10 players with tier badges.
+* **8+ Achievements** — Unlock achievements for battle milestones, GitHub stats, and language specialist badges (18 languages).
+* **Leaderboard** — Filterable leaderboard with sort by wins/win rate/total battles, tier filter, and top 10/25/50.
 * **Battle History** — Track your last 20 battles, win/loss record, and current streak.
 * **Friend System** — Search users, send/accept/decline friend requests, and view friends list with tier badges and W/L stats.
 * **Online Presence** — See which friends are online (green dot) or offline (greyed out) in real-time.
@@ -120,8 +120,8 @@ NEXT_PUBLIC_PUSHER_CLUSTER=your_pusher_cluster
 - [x] Friend system with online presence tracking
 - [x] Real-time friend challenges via Pusher
 - [x] Social sharing (battle results, profile cards)
-- [ ] Language specialist badges
-- [ ] Enhanced leaderboard filters
+- [x] Language specialist badges (18 languages, 5+ repos threshold)
+- [x] Enhanced leaderboard filters (sort, tier filter, top N)
 - [ ] Quest system
 - [ ] Equipment & items
 - [ ] Battle arenas

@@ -54,3 +54,4 @@ Requires: `PRISMA_DATABASE_URL`, `POSTGRES_URL` (Prisma), `GITHUB_ID`, `GITHUB_S
 - Wins/losses only increment for PvP matchmaking battles — PvE (AI) and friend battles are recorded in history but don't affect leaderboard standings
 - Language specialist badges unlock when a user has 5+ repos in a language (18 languages supported)
 - Achievements panel has category filter tabs (all/battle/github/special/language)
+- Leaderboard supports filters: sort by (wins/win rate/total battles), tier filter, and top N (10/25/50)
