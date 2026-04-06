@@ -5,7 +5,7 @@ import { useSession, signIn, signOut } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation"; 
 import { getLeaderboard, getBattleHistory, getUserAchievements, createRoom, getPublicRooms } from "./actions";
 import { ACHIEVEMENTS } from "./lib/achievements";
-import { getTier, getTierProgress } from "./lib/tiers";
+import { getTier, getTierProgress, TIERS } from "./lib/tiers";
 import BattleView from "./components/BattleView";
 import FriendsPanel from "./components/FriendsPanel";
 import { getCharacterProfile, Character } from "./lib/github";
@@ -29,6 +29,9 @@ function HomeContent() {
   
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
+  const [lbSort, setLbSort] = useState<"wins" | "winRate" | "totalBattles">("wins");
+  const [lbLimit, setLbLimit] = useState<10 | 25 | 50>(10);
+  const [lbTier, setLbTier] = useState("all");
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [publicRooms, setPublicRooms] = useState<any[]>([]);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -87,9 +90,13 @@ function HomeContent() {
     }
   }, [searchParams]);
 
-  const handleShowLeaderboard = async () => {
-    const data = await getLeaderboard();
+  const fetchLeaderboard = async (sort: "wins" | "winRate" | "totalBattles" = lbSort, limit: 10 | 25 | 50 = lbLimit, tier: string = lbTier) => {
+    const data = await getLeaderboard(sort, limit, tier);
     setLeaderboard(data);
+  };
+
+  const handleShowLeaderboard = async () => {
+    await fetchLeaderboard();
     setMenuStep("leaderboard");
   };
 
@@ -311,7 +318,60 @@ function HomeContent() {
                     />
                   )}
                 </div>
-                <div className="bg-black/40 border-4 border-black p-4 max-h-60 overflow-y-auto">
+
+                {/* Filter Controls */}
+                <div className="flex flex-wrap gap-2 justify-center">
+                  {/* Sort By */}
+                  <select
+                    value={lbSort}
+                    aria-label="Sort leaderboard by"
+                    onChange={async (e) => {
+                      const val = e.target.value as "wins" | "winRate" | "totalBattles";
+                      setLbSort(val);
+                      await fetchLeaderboard(val, lbLimit, lbTier);
+                    }}
+                    className="bg-black/60 border-2 border-gray-600 text-white retro-font text-[10px] px-2 py-1 cursor-pointer focus:border-[#ffd700] outline-none"
+                  >
+                    <option value="wins">MOST WINS</option>
+                    <option value="winRate">WIN RATE</option>
+                    <option value="totalBattles">MOST BATTLES</option>
+                  </select>
+
+                  {/* Tier Filter */}
+                  <select
+                    value={lbTier}
+                    aria-label="Filter by tier"
+                    onChange={async (e) => {
+                      const val = e.target.value;
+                      setLbTier(val);
+                      await fetchLeaderboard(lbSort, lbLimit, val);
+                    }}
+                    className="bg-black/60 border-2 border-gray-600 text-white retro-font text-[10px] px-2 py-1 cursor-pointer focus:border-[#ffd700] outline-none"
+                  >
+                    <option value="all">ALL TIERS</option>
+                    {TIERS.map(t => (
+                      <option key={t.name} value={t.name}>{t.icon} {t.name.toUpperCase()}</option>
+                    ))}
+                  </select>
+
+                  {/* Limit */}
+                  <select
+                    value={lbLimit}
+                    aria-label="Number of results"
+                    onChange={async (e) => {
+                      const val = Number(e.target.value) as 10 | 25 | 50;
+                      setLbLimit(val);
+                      await fetchLeaderboard(lbSort, val, lbTier);
+                    }}
+                    className="bg-black/60 border-2 border-gray-600 text-white retro-font text-[10px] px-2 py-1 cursor-pointer focus:border-[#ffd700] outline-none"
+                  >
+                    <option value={10}>TOP 10</option>
+                    <option value={25}>TOP 25</option>
+                    <option value={50}>TOP 50</option>
+                  </select>
+                </div>
+
+                <div className="bg-black/40 border-4 border-black p-4 max-h-72 overflow-y-auto">
                 {leaderboard.length === 0 ? (
                   <p className="text-white retro-font text-center">NO LEGENDS YET...</p>
                 ) : (
@@ -329,8 +389,22 @@ function HomeContent() {
                             {tier.icon} {tier.name}
                           </span>
                           <div className="text-right">
-                            <span className="text-[#4ecdc4] retro-font text-xs block">{player.wins}W</span>
-                            <span className="text-gray-500 retro-font text-[10px] block">{player.losses}L</span>
+                            {lbSort === "winRate" ? (
+                              <>
+                                <span className="text-[#4ecdc4] retro-font text-xs block">{player.winRate}%</span>
+                                <span className="text-gray-500 retro-font text-[10px] block">{player.wins}W/{player.losses}L</span>
+                              </>
+                            ) : lbSort === "totalBattles" ? (
+                              <>
+                                <span className="text-[#4ecdc4] retro-font text-xs block">{player.totalBattles}B</span>
+                                <span className="text-gray-500 retro-font text-[10px] block">{player.wins}W/{player.losses}L</span>
+                              </>
+                            ) : (
+                              <>
+                                <span className="text-[#4ecdc4] retro-font text-xs block">{player.wins}W</span>
+                                <span className="text-gray-500 retro-font text-[10px] block">{player.losses}L</span>
+                              </>
+                            )}
                           </div>
                         </div>
                       </div>

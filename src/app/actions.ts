@@ -238,12 +238,17 @@ export async function getBattleHistory(username: string) {
     }
 }
 
-// fetch top 10 players by wins
-export async function getLeaderboard() {
+// fetch leaderboard with filters
+export async function getLeaderboard(
+    sortBy: "wins" | "winRate" | "totalBattles" = "wins",
+    limit: 10 | 25 | 50 = 10,
+    tierFilter: string = "all"
+) {
     try {
-        const topPlayers = await prisma.user.findMany({
-            orderBy: { wins: 'desc'},
-            take: 10,
+        const players = await prisma.user.findMany({
+            where: {
+                OR: [{ wins: { gt: 0 } }, { losses: { gt: 0 } }]
+            },
             select: {
                 username: true,
                 avatar: true,
@@ -251,7 +256,31 @@ export async function getLeaderboard() {
                 losses: true
             }
         });
-        return topPlayers;
+
+        // compute derived fields
+        const enriched = players.map(p => {
+            const total = p.wins + p.losses;
+            const winRate = total > 0 ? Math.round((p.wins / total) * 100) : 0;
+            return { ...p, totalBattles: total, winRate };
+        });
+
+        // filter by tier
+        let filtered = enriched;
+        if (tierFilter !== "all") {
+            const { getTier } = await import("./lib/tiers");
+            filtered = enriched.filter(p => getTier(p.wins).name === tierFilter);
+        }
+
+        // sort
+        if (sortBy === "wins") {
+            filtered.sort((a, b) => b.wins - a.wins);
+        } else if (sortBy === "winRate") {
+            filtered.sort((a, b) => b.winRate - a.winRate || b.wins - a.wins);
+        } else {
+            filtered.sort((a, b) => b.totalBattles - a.totalBattles);
+        }
+
+        return filtered.slice(0, limit);
     } catch (error) {
         console.error("failed to fetch leaderboard:", error);
         return [];
