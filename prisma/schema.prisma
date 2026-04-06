@@ -59,7 +59,7 @@ model Room {
   createdAt DateTime @default(now())
   host      String
   guest     String?
-  status         String   @default("WAITING")
+  status    String   @default("WAITING")
   isPrivate      Boolean  @default(false)
   isFriendBattle Boolean  @default(false)
 }
